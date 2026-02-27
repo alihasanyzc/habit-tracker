@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,55 +7,50 @@ import {
   TouchableOpacity,
   PanResponder,
   Animated,
-  Dimensions,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // ── Renk Paleti ────────────────────────────────────────
 const C = {
   bg: '#FFFFFF',
-  cardCream: '#F6EFEA',
-  cardWarm: '#FFF4EA',
-  cardBeige: '#EFE5DD',
   orange: '#FF8A1F',
   orangeDark: '#E06B00',
-  green: '#8FB339',
   text: '#1F1F1F',
   muted: '#7A7A7A',
   border: '#E6E6E6',
-  navBg: '#EFE5DD',
 };
 
 // ── Hafta günleri ──────────────────────────────────────
 const WEEK_DAYS = [
-  { day: 'Mon', date: 7,  pct: 75  },
-  { day: 'Tue', date: 8,  pct: 100 },
-  { day: 'Wed', date: 9,  pct: 50  },
-  { day: 'Thu', date: 10, isToday: true },
-  { day: 'Fri', date: 11, pct: 25  },
-  { day: 'Sat', date: 12, pct: 0   },
-  { day: 'Sun', date: 13, pct: 60  },
+  { day: 'Pzt', date: 7, pct: 75 },
+  { day: 'Sal', date: 8, pct: 100 },
+  { day: 'Çar', date: 9, pct: 50 },
+  { day: 'Per', date: 10, isToday: true },
+  { day: 'Cum', date: 11, pct: 25 },
+  { day: 'Cmt', date: 12, pct: 0 },
+  { day: 'Paz', date: 13, pct: 60 },
 ];
 
 // ── Habit listesi ──────────────────────────────────────
 interface Habit {
   id: number;
   name: string;
-  streak: number;
-  duration: string;
   completed: boolean;
   bgColor: string;
-  emoji: string;
-  skippable?: boolean;
+  icon: string;
+  iconColor: string;
 }
 
 const INITIAL_HABITS: Habit[] = [
-  { id: 1, name: 'Set Small Goals', streak: 3,  duration: '5 min',  completed: true,  bgColor: C.cardCream, emoji: '🎯' },
-  { id: 2, name: 'Work',            streak: 6,  duration: '15 min', completed: true,  bgColor: C.cardWarm,  emoji: '🏆' },
-  { id: 3, name: 'Meditation',      streak: 5,  duration: '10 min', completed: false, bgColor: C.cardBeige, emoji: '😇', skippable: true },
-  { id: 4, name: 'Basketball',      streak: 3,  duration: '20 min', completed: false, bgColor: C.cardCream, emoji: '🏀' },
+  { id: 1, name: 'Küçük Hedef Belirle', completed: true,  bgColor: '#FFF0E0', icon: 'target',            iconColor: '#FF8A1F' },
+  { id: 2, name: 'Çalışma',             completed: true,  bgColor: '#ECEEFA', icon: 'briefcase-outline', iconColor: '#7B8AB8' },
+  { id: 3, name: 'Meditasyon',          completed: false, bgColor: '#F4EEFA', icon: 'meditation',        iconColor: '#A67CC5' },
+  { id: 4, name: 'Basketbol',           completed: false, bgColor: '#FFE8D6', icon: 'basketball',        iconColor: '#E06B00' },
+  { id: 5, name: 'Kitap Okuma',         completed: false, bgColor: '#EEF6DA', icon: 'book-open-variant', iconColor: '#8FB339' },
+  { id: 6, name: 'Su İç',              completed: false, bgColor: '#E2F0FB', icon: 'water',             iconColor: '#4A90D9' },
 ];
 
 // ── Dairesel İlerleme (SVG) ────────────────────────────
@@ -71,11 +66,7 @@ function CircleDay({
   const CIRC = 2 * Math.PI * R;
   const offset = CIRC * (1 - pct / 100);
 
-  const ringColor = isSelected
-    ? C.orange
-    : pct === 100 ? C.green
-    : pct > 0 ? '#FFC58A'
-    : C.border;
+  const ringColor = pct > 0 ? C.orange : C.border;
 
   return (
     <TouchableOpacity onPress={onPress} style={styles.dayBtn} activeOpacity={0.7}>
@@ -103,7 +94,6 @@ function CircleDay({
           <Text style={[
             styles.dayNum,
             isSelected && { color: C.orange, fontWeight: '700' },
-            pct === 100 && !isSelected && { color: C.green },
           ]}>
             {date}
           </Text>
@@ -120,15 +110,14 @@ function CircleDay({
 }
 
 // ── Swipeable Habit Card ───────────────────────────────
-const SCREEN_W = Dimensions.get('window').width;
 const SWIPE_THRESHOLD = 80;
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 function HabitCard({
   habit,
-  isFirst,
   onToggle,
 }: {
-  habit: Habit; isFirst: boolean; onToggle: (id: number) => void;
+  habit: Habit; onToggle: (id: number) => void;
 }) {
   const translateX = useRef(new Animated.Value(0)).current;
   const revealOpacity = translateX.interpolate({
@@ -154,7 +143,7 @@ function HabitCard({
         if (g.dx < -SWIPE_THRESHOLD) {
           Animated.sequence([
             Animated.timing(translateX, { toValue: -120, duration: 200, useNativeDriver: false }),
-            Animated.timing(translateX, { toValue: 0,    duration: 300, useNativeDriver: false }),
+            Animated.timing(translateX, { toValue: 0, duration: 300, useNativeDriver: false }),
           ]).start(() => onToggle(habit.id));
         } else {
           Animated.spring(translateX, { toValue: 0, useNativeDriver: false }).start();
@@ -171,17 +160,19 @@ function HabitCard({
       </Animated.View>
 
       {/* Kart içeriği */}
-      <Animated.View
+      <AnimatedTouchable
         style={[
           styles.card,
-          { backgroundColor: habit.completed ? '#F9F5F2' : habit.bgColor },
+          { backgroundColor: habit.completed ? '#F5F5F5' : habit.bgColor },
           { transform: [{ translateX }] },
         ]}
+        onPress={() => onToggle(habit.id)}
+        activeOpacity={0.85}
         {...(!habit.completed ? panResponder.panHandlers : {})}
       >
-        {/* Emoji */}
+        {/* İkon */}
         <View style={[styles.emojiBox, { opacity: habit.completed ? 0.65 : 1 }]}>
-          <Text style={styles.emojiText}>{habit.emoji}</Text>
+          <MaterialCommunityIcons name={habit.icon as any} size={22} color={habit.iconColor} />
         </View>
 
         {/* İsim */}
@@ -193,133 +184,96 @@ function HabitCard({
         </Text>
 
         {/* Sağ taraf */}
-        {habit.completed ? (
-          <View style={styles.doneCircle}>
+        {habit.completed && (
+          <TouchableOpacity style={styles.doneCircle} onPress={() => onToggle(habit.id)} activeOpacity={0.7}>
             <Text style={styles.doneCheck}>✓</Text>
-          </View>
-        ) : habit.skippable ? (
-          <TouchableOpacity style={styles.skipBtn} activeOpacity={0.7}>
-            <Text style={styles.skipText}>Skip →</Text>
           </TouchableOpacity>
-        ) : null}
-      </Animated.View>
+        )}
+      </AnimatedTouchable>
 
-      {/* Swipe ipucu (ilk aktif kart) */}
-      {isFirst && !habit.completed && (
-        <View style={styles.swipeHintWrap} pointerEvents="none">
-          <Text style={styles.swipeHintIcon}>👈</Text>
-        </View>
-      )}
     </View>
   );
+}
+
+// ── Saate göre selamlama & ikon ───────────────────────
+function getTimeOfDay() {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return { greeting: 'Günaydın',   icon: 'weather-sunny',  bg: '#FF8A1F' };
+  if (hour >= 12 && hour < 17) return { greeting: 'İyi günler', icon: 'white-balance-sunny', bg: '#F5A623' };
+  if (hour >= 17 && hour < 21) return { greeting: 'İyi akşamlar', icon: 'weather-sunset', bg: '#E06B00' };
+  return { greeting: 'İyi geceler', icon: 'weather-night', bg: '#3D5A99' };
 }
 
 // ── Ana Bileşen ────────────────────────────────────────
 export default function HomeScreen() {
   const [habits, setHabits] = useState<Habit[]>(INITIAL_HABITS);
   const [selectedDate, setSelectedDate] = useState(10);
-  const [showNotif, setShowNotif] = useState(false);
-
   const toggleHabit = (id: number) => {
     setHabits(prev => prev.map(h => h.id === id ? { ...h, completed: !h.completed } : h));
   };
 
   const completed = habits.filter(h => h.completed);
-  const active    = habits.filter(h => !h.completed);
-  const todayPct  = Math.round((completed.length / habits.length) * 100);
+  const active = habits.filter(h => !h.completed);
+  const todayPct = Math.round((completed.length / habits.length) * 100);
 
   const weekDays = WEEK_DAYS.map(d => ({
     ...d,
     pct: d.isToday ? todayPct : (d.pct ?? 0),
   }));
 
+  const timeOfDay = getTimeOfDay();
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      {/* ── Başlık ──────────────────────────────── */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greeting}>{timeOfDay.greeting}, Budi</Text>
+          <Text style={styles.dateText}>Salı, 10 Mart, 2025</Text>
+        </View>
+        <View style={styles.headerRight}>
+          <View style={[styles.avatar, { backgroundColor: timeOfDay.bg }]}>
+            <MaterialCommunityIcons name={timeOfDay.icon as any} size={26} color="#fff" />
+          </View>
+        </View>
+      </View>
+
+      {/* ── Haftalık Takvim ─────────────────────── */}
+      <View style={styles.weekRow}>
+        {weekDays.map(d => (
+          <CircleDay
+            key={d.date}
+            day={d.day}
+            date={d.date}
+            pct={d.pct}
+            isSelected={d.date === selectedDate}
+            isToday={d.isToday}
+            onPress={() => setSelectedDate(d.date)}
+          />
+        ))}
+      </View>
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Başlık ──────────────────────────────── */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Morning, Budi</Text>
-            <Text style={styles.dateText}>Thursday, 10 March, 2025</Text>
-          </View>
-          <View style={styles.headerRight}>
-            {/* Bildirim */}
-            <TouchableOpacity
-              style={styles.bellBtn}
-              onPress={() => setShowNotif(v => !v)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.bellIcon}>🔔</Text>
-              <View style={styles.bellDot} />
-            </TouchableOpacity>
-            {/* Avatar */}
-            <View style={styles.avatar}>
-              <Text style={styles.avatarEmoji}>🐯</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Bildirim dropdown */}
-        {showNotif && (
-          <View style={styles.notifBox}>
-            <Text style={styles.notifTitle}>Bildirimler</Text>
-            {[
-              { text: 'Günlük rutinin başlamak üzere! 🌅', time: '5 dk önce' },
-              { text: "Streak'ini koru — bugün 10. günün! 🔥", time: '2 saat önce' },
-            ].map((n, i) => (
-              <View key={i} style={styles.notifItem}>
-                <Text style={styles.notifText}>{n.text}</Text>
-                <Text style={styles.notifTime}>{n.time}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* ── Haftalık Takvim ─────────────────────── */}
-        <View style={styles.weekRow}>
-          {weekDays.map(d => (
-            <CircleDay
-              key={d.date}
-              day={d.day}
-              date={d.date}
-              pct={d.pct}
-              isSelected={d.date === selectedDate}
-              isToday={d.isToday}
-              onPress={() => setSelectedDate(d.date)}
-            />
-          ))}
-        </View>
-
         {/* ── Daily Routine ────────────────────────── */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Daily routine</Text>
-          <TouchableOpacity activeOpacity={0.7}>
-            <Text style={styles.seeAll}>See all</Text>
-          </TouchableOpacity>
+          <Text style={styles.sectionTitle}>Günlük Rutinlerim</Text>
         </View>
 
-        <Text style={styles.swipeHint}>← Sola kaydır tamamlamak için</Text>
-
         {/* Aktif alışkanlıklar */}
-        {active.map((h, i) => (
-          <HabitCard
-            key={h.id}
-            habit={h}
-            isFirst={i === 0}
-            onToggle={toggleHabit}
-          />
+        {active.map(h => (
+          <HabitCard key={h.id} habit={h} onToggle={toggleHabit} />
         ))}
 
         {/* Tamamlananlar */}
         {completed.length > 0 && (
           <>
-            <Text style={styles.completedLabel}>Completed</Text>
+            <Text style={styles.completedLabel}>Tamamlananlar</Text>
             {completed.map(h => (
-              <HabitCard key={h.id} habit={h} isFirst={false} onToggle={toggleHabit} />
+              <HabitCard key={h.id} habit={h} onToggle={toggleHabit} />
             ))}
           </>
         )}
@@ -328,6 +282,7 @@ export default function HomeScreen() {
       </ScrollView>
     </SafeAreaView>
   );
+
 }
 
 // ── Stiller ────────────────────────────────────────────
@@ -349,42 +304,12 @@ const styles = StyleSheet.create({
   dateText: { fontSize: 13, color: C.muted, marginTop: 3 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
 
-  bellBtn: {
-    width: 44, height: 44, borderRadius: 22,
-    backgroundColor: C.cardCream,
-    alignItems: 'center', justifyContent: 'center',
-    ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4 }, android: { elevation: 2 } }),
-  },
-  bellIcon: { fontSize: 18 },
-  bellDot: {
-    position: 'absolute', top: 9, right: 9,
-    width: 8, height: 8, borderRadius: 4,
-    backgroundColor: C.orange, borderWidth: 1.5, borderColor: C.bg,
-  },
-
   avatar: {
-    width: 48, height: 48, borderRadius: 24,
-    backgroundColor: '#F5C87A',
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: C.orange,
     alignItems: 'center', justifyContent: 'center',
     ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6 }, android: { elevation: 3 } }),
   },
-  avatarEmoji: { fontSize: 26 },
-
-  // Bildirim
-  notifBox: {
-    marginHorizontal: 20, marginTop: 8,
-    backgroundColor: C.bg, borderRadius: 16, padding: 14,
-    borderWidth: 1, borderColor: C.border,
-    ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12 }, android: { elevation: 6 } }),
-  },
-  notifTitle: { fontSize: 13, fontWeight: '700', color: C.text, marginBottom: 10 },
-  notifItem: {
-    padding: 10, backgroundColor: C.cardCream,
-    borderRadius: 12, borderLeftWidth: 3, borderLeftColor: C.orange,
-    marginBottom: 8,
-  },
-  notifText: { fontSize: 12, color: C.text },
-  notifTime: { fontSize: 11, color: C.muted, marginTop: 2 },
 
   // Haftalık takvim
   weekRow: {
@@ -407,11 +332,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8,
   },
   sectionTitle: { fontSize: 20, fontWeight: '700', color: C.text },
-  seeAll: { fontSize: 13, color: C.muted },
-  swipeHint: { fontSize: 11, color: '#A39590', paddingHorizontal: 16, marginBottom: 10 },
 
   // Kart
-  cardWrap: { paddingHorizontal: 16, marginBottom: 10, position: 'relative' },
+  cardWrap: { paddingHorizontal: 16, marginBottom: 7, position: 'relative' },
   cardReveal: {
     position: 'absolute',
     top: 0, left: 16, right: 16, bottom: 0,
@@ -422,36 +345,23 @@ const styles = StyleSheet.create({
   checkIcon: { fontSize: 22, color: '#fff', fontWeight: '700' },
 
   card: {
-    borderRadius: 18, padding: 14,
-    flexDirection: 'row', alignItems: 'center', gap: 14,
+    borderRadius: 16, padding: 10,
+    flexDirection: 'row', alignItems: 'center', gap: 10,
   },
   emojiBox: {
-    width: 46, height: 46, borderRadius: 14,
+    width: 38, height: 38, borderRadius: 11,
     backgroundColor: 'rgba(255,255,255,0.55)',
     alignItems: 'center', justifyContent: 'center',
   },
-  emojiText: { fontSize: 26 },
-  habitName: { flex: 1, fontSize: 16, fontWeight: '600', color: C.text },
+  habitName: { flex: 1, fontSize: 15, fontWeight: '600', color: C.text },
   habitNameDone: { color: C.muted, textDecorationLine: 'line-through' },
 
   doneCircle: {
     width: 30, height: 30, borderRadius: 15,
-    backgroundColor: C.green,
+    backgroundColor: C.orange,
     alignItems: 'center', justifyContent: 'center',
   },
   doneCheck: { color: '#fff', fontSize: 15, fontWeight: '700' },
-
-  skipBtn: {
-    backgroundColor: 'rgba(255,255,255,0.55)',
-    borderRadius: 10, paddingHorizontal: 14, paddingVertical: 6,
-  },
-  skipText: { fontSize: 13, fontWeight: '600', color: C.muted },
-
-  swipeHintWrap: {
-    position: 'absolute', right: 28, top: '50%',
-    transform: [{ translateY: -12 }],
-  },
-  swipeHintIcon: { fontSize: 18 },
 
   // Tamamlananlar
   completedLabel: {
