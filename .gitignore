@@ -1,0 +1,76 @@
+# ── Bağımlılıklar ──────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# ── Expo ───────────────────────────────────────────────
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+*.expo.*
+
+# ── Native (Prebuild) ──────────────────────────────────
+/ios
+/android
+.kotlin/
+*.orig.*
+
+# ── Sertifikalar & Anahtarlar (GÜVENLİK) ───────────────
+*.jks
+*.p8
+*.p12
+*.key
+*.keystore
+*.mobileprovision
+*.cer
+*.pem
+google-services.json
+GoogleService-Info.plist
+
+# ── Ortam Değişkenleri (GÜVENLİK) ──────────────────────
+.env
+.env.*
+.env.local
+.env.development
+.env.staging
+.env.production
+!.env.example
+
+# ── Metro Bundler ───────────────────────────────────────
+.metro-health-check*
+
+# ── Debug & Log ────────────────────────────────────────
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+
+# ── TypeScript ─────────────────────────────────────────
+*.tsbuildinfo
+
+# ── macOS ──────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# ── Windows ────────────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ── IDE ────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── Figma geçici dosyaları ─────────────────────────────
+habit-figma-screenshot.png
+
+# ── Build çıktıları ────────────────────────────────────
+build/
+out/
+coverage/
