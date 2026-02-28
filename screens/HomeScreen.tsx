@@ -45,12 +45,12 @@ interface Habit {
 }
 
 const INITIAL_HABITS: Habit[] = [
-  { id: 1, name: 'Küçük Hedef Belirle', completed: true,  bgColor: '#FFF0E0', icon: 'target',            iconColor: '#FF8A1F' },
-  { id: 2, name: 'Çalışma',             completed: true,  bgColor: '#ECEEFA', icon: 'briefcase-outline', iconColor: '#7B8AB8' },
-  { id: 3, name: 'Meditasyon',          completed: false, bgColor: '#F4EEFA', icon: 'meditation',        iconColor: '#A67CC5' },
-  { id: 4, name: 'Basketbol',           completed: false, bgColor: '#FFE8D6', icon: 'basketball',        iconColor: '#E06B00' },
-  { id: 5, name: 'Kitap Okuma',         completed: false, bgColor: '#EEF6DA', icon: 'book-open-variant', iconColor: '#8FB339' },
-  { id: 6, name: 'Su İç',              completed: false, bgColor: '#E2F0FB', icon: 'water',             iconColor: '#4A90D9' },
+  { id: 1, name: 'Küçük Hedef Belirle', completed: true, bgColor: '#FFF0E0', icon: 'target', iconColor: '#FF8A1F' },
+  { id: 2, name: 'Çalışma', completed: true, bgColor: '#ECEEFA', icon: 'briefcase-outline', iconColor: '#7B8AB8' },
+  { id: 3, name: 'Meditasyon', completed: false, bgColor: '#F4EEFA', icon: 'meditation', iconColor: '#A67CC5' },
+  { id: 4, name: 'Basketbol', completed: false, bgColor: '#FFE8D6', icon: 'basketball', iconColor: '#E06B00' },
+  { id: 5, name: 'Kitap Okuma', completed: false, bgColor: '#EEF6DA', icon: 'book-open-variant', iconColor: '#8FB339' },
+  { id: 6, name: 'Su İç', completed: false, bgColor: '#E2F0FB', icon: 'water', iconColor: '#4A90D9' },
 ];
 
 // ── Dairesel İlerleme (SVG) ────────────────────────────
@@ -198,10 +198,10 @@ function HabitCard({
 // ── Saate göre selamlama & ikon ───────────────────────
 function getTimeOfDay() {
   const hour = new Date().getHours();
-  if (hour >= 5 && hour < 12) return { greeting: 'Günaydın',   icon: 'weather-sunny',  bg: '#FF8A1F' };
-  if (hour >= 12 && hour < 17) return { greeting: 'İyi günler', icon: 'white-balance-sunny', bg: '#F5A623' };
-  if (hour >= 17 && hour < 21) return { greeting: 'İyi akşamlar', icon: 'weather-sunset', bg: '#E06B00' };
-  return { greeting: 'İyi geceler', icon: 'weather-night', bg: '#3D5A99' };
+  if (hour >= 5 && hour < 12) return { greeting: 'Günaydın', icon: 'weather-sunny', bg: '#FF8A1F' };
+  if (hour >= 12 && hour < 17) return { greeting: 'İyi Günler', icon: 'white-balance-sunny', bg: '#F5A623' };
+  if (hour >= 17 && hour < 21) return { greeting: 'İyi Akşamlar', icon: 'weather-sunset', bg: '#E06B00' };
+  return { greeting: 'İyi Geceler', icon: 'weather-night', bg: '#3D5A99' };
 }
 
 // ── Ana Bileşen ────────────────────────────────────────

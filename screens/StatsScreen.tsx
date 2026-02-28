@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Dimensions, Platform,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // ── Renk Paleti ────────────────────────────────────────
@@ -23,7 +24,6 @@ const C = {
 type TabType = 'weekly' | 'monthly' | 'yearly';
 
 const DAY_LABELS_LONG  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const DAY_LABELS_SHORT = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const SUN_IDX = 6;
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTH_NAMES_TR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
@@ -33,85 +33,91 @@ function sr(seed: number) {
   const x = Math.sin(seed + 1) * 10000;
   return x - Math.floor(x);
 }
-function buildGrid(weeks: number, id: number, rate: number, skipWknd: boolean): boolean[][] {
-  return Array.from({ length: weeks }, (_, w) =>
-    Array.from({ length: 7 }, (_, d) => {
-      if (skipWknd && d >= 5) return sr(id * 7777 + w * 7 + d) < 0.12;
-      return sr(id * 1234 + w * 7 + d) < rate;
-    })
-  );
-}
-
-// ── Tarih formatlama ─────────────────────────────────
-function fmtDate(d: Date) {
-  const day = d.getDate();
-  const mon = MONTH_NAMES_TR[d.getMonth()].slice(0, 3);
-  const yr = d.getFullYear();
-  return `${day} ${mon} ${yr}`;
-}
-
-function dateLabel(start: Date, end?: Date) {
-  if (end) return `${fmtDate(start)} — ${fmtDate(end)}`;
-  return `${fmtDate(start)} — Devam ediyor`;
-}
 
 // ── Alışkanlık verisi ──────────────────────────────────
 const HABITS = [
-  { id: 1, name: 'Set Small Goals', emoji: '🎯', startDate: new Date(2025, 0, 15), endDate: undefined,              color: '#FF8A1F', bgColor: '#FFF4EA', rate: 0.88, skipWknd: false, week: [true,true,true,true,true,true,false] },
-  { id: 2, name: 'Meditation',      emoji: '😇', startDate: new Date(2025, 2, 1),  endDate: new Date(2025, 8, 30),  color: '#8FB339', bgColor: '#F4F8E6', rate: 0.68, skipWknd: true,  week: [true,true,true,false,true,false,false] },
-  { id: 3, name: 'Work',            emoji: '🏆', startDate: new Date(2025, 1, 10), endDate: undefined,              color: '#A35414', bgColor: '#F8EDE4', rate: 0.79, skipWknd: false, week: [true,true,true,true,true,true,false] },
-  { id: 4, name: 'Sleep Over 8h',   emoji: '🥰', startDate: new Date(2025, 3, 1),  endDate: new Date(2026, 3, 1),   color: '#E78AC3', bgColor: '#FDF0F8', rate: 0.72, skipWknd: false, week: [true,true,true,true,true,true,true] },
+  { id: 1, name: 'Su İç',         icon: 'water',      color: '#FF8A1F', bgColor: '#FFF4EA', rate: 0.88, week: [true,true,true,true,true,true,false] },
+  { id: 2, name: 'Meditasyon',    icon: 'meditation', color: '#8FB339', bgColor: '#F4F8E6', rate: 0.68, week: [true,true,true,false,true,false,false] },
+  { id: 3, name: 'Egzersiz Yap', icon: 'run',        color: '#A35414', bgColor: '#F8EDE4', rate: 0.79, week: [true,true,true,true,true,true,false] },
+  { id: 4, name: '8 Saat Uyu',   icon: 'sleep',      color: '#E78AC3', bgColor: '#FDF0F8', rate: 0.72, week: [true,true,true,true,true,true,true] },
 ];
 
 // ── Yardımcı: Ekran genişliğine göre kart içi genişlik ─
 const SCREEN_W = Dimensions.get('window').width;
 const CARD_INNER = SCREEN_W - 32 - 32; // padding + iç padding
+const CARD_CONTENT_H = 82;             // tüm kartlarda sabit içerik yüksekliği
 
 // ════════════════════════════════════════════════════════
 // HAFTALIK KART
 // ════════════════════════════════════════════════════════
 function WeeklyCard({ habit }: { habit: typeof HABITS[number] }) {
-  const pct = Math.round((habit.week.filter(Boolean).length / 7) * 100);
-  const circleSize = Math.floor((CARD_INNER - 6 * 6) / 7); // 6 boşluk
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  const today = new Date();
+  const mondayDiff = today.getDay() === 0 ? -6 : 1 - today.getDay();
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() + mondayDiff + weekOffset * 7);
+  const weekLabel = `${weekStart.getDate()} ${MONTH_NAMES_TR[weekStart.getMonth()].slice(0, 3)}`;
+
+  const weekDone: boolean[] = weekOffset === 0
+    ? habit.week
+    : Array.from({ length: 7 }, (_, d) => sr(habit.id * 1234 + weekOffset * 7 + d) < habit.rate);
+
+  const doneDays = weekDone.filter(Boolean).length;
+  const pct = Math.round((doneDays / 7) * 100);
+  const circleSize = Math.floor((CARD_INNER - 6 * 6) / 7);
 
   return (
     <View style={styles.card}>
       {/* Başlık satırı */}
       <View style={styles.cardHeader}>
         <View style={[styles.emojiBox, { backgroundColor: habit.bgColor }]}>
-          <Text style={styles.emojiText}>{habit.emoji}</Text>
+          <MaterialCommunityIcons name={habit.icon as any} size={22} color={habit.color} />
         </View>
         <View style={styles.cardInfo}>
-          <Text style={styles.cardName}>{habit.name}</Text>
-          <Text style={styles.cardFreq}>{dateLabel(habit.startDate, habit.endDate)}</Text>
+          <Text style={styles.cardName} numberOfLines={1}>{habit.name}</Text>
         </View>
-        <View style={[styles.pctBadge, { backgroundColor: habit.bgColor }]}>
-          <Text style={[styles.pctText, { color: habit.color }]}>{pct}%</Text>
+        <View style={styles.navControl}>
+          <TouchableOpacity onPress={() => setWeekOffset(w => w - 1)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.navArrow}>‹</Text>
+          </TouchableOpacity>
+          <View style={styles.navBadge}>
+            <Text style={styles.navBadgeText}>{weekLabel}</Text>
+          </View>
+          <TouchableOpacity onPress={() => setWeekOffset(w => w + 1)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.navArrow}>›</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
-      {/* Gün etiketleri */}
-      <View style={styles.dayRow}>
-        {DAY_LABELS_LONG.map((lbl, i) => (
-          <View key={i} style={{ width: circleSize, alignItems: 'center' }}>
-            <Text style={[styles.dayLabel, i === SUN_IDX && { color: C.orange }]}>{lbl}</Text>
-          </View>
-        ))}
+      {/* Gün etiketleri + Daireler — sabit yükseklik */}
+      <View style={{ height: CARD_CONTENT_H, justifyContent: 'space-around' }}>
+        <View style={[styles.dayRow, { marginBottom: 0 }]}>
+          {DAY_LABELS_LONG.map((lbl, i) => (
+            <View key={i} style={{ width: circleSize, alignItems: 'center' }}>
+              <Text style={[styles.dayLabel, i === SUN_IDX && { color: C.orange }]}>{lbl}</Text>
+            </View>
+          ))}
+        </View>
+        <View style={[styles.dayRow, { marginBottom: 0 }]}>
+          {weekDone.map((done, i) => (
+            <View key={i} style={[
+              styles.dayCircle,
+              { width: circleSize, height: circleSize, borderRadius: circleSize / 2 },
+              done
+                ? { backgroundColor: habit.color, borderWidth: 0 }
+                : { backgroundColor: 'transparent', borderWidth: 2, borderColor: i === SUN_IDX ? '#FFC58A' : C.border },
+            ]} />
+          ))}
+        </View>
       </View>
 
-      {/* Günlük daireler */}
-      <View style={styles.dayRow}>
-        {habit.week.map((done, i) => (
-          <View key={i} style={[
-            styles.dayCircle,
-            { width: circleSize, height: circleSize, borderRadius: circleSize / 2 },
-            done
-              ? { backgroundColor: habit.color, borderWidth: 0 }
-              : { backgroundColor: 'transparent', borderWidth: 2, borderColor: i === SUN_IDX ? '#FFC58A' : C.border },
-          ]}>
-            {done && <Text style={styles.checkMark}>✓</Text>}
-          </View>
-        ))}
+      {/* Alt satır: gün sayısı + yüzde */}
+      <View style={styles.mCardBottom}>
+        <Text style={styles.mBottomText}>{doneDays}/7 gün</Text>
+        <View style={[styles.pctBadgeSm, { backgroundColor: habit.bgColor }]}>
+          <Text style={[styles.pctTextSm, { color: habit.color }]}>{pct}%</Text>
+        </View>
       </View>
     </View>
   );
@@ -148,20 +154,24 @@ function MonthlyCard({ habit }: { habit: typeof HABITS[number] }) {
   const pct = Math.round((doneDays / daysInMonth) * 100);
 
   return (
-    <View style={styles.mCard}>
-      {/* Üst satır: emoji+isim solda, ay nav sağda */}
-      <View style={styles.mCardTop}>
-        <View style={[styles.emojiBoxSm, { backgroundColor: habit.bgColor }]}>
-          <Text style={{ fontSize: 16 }}>{habit.emoji}</Text>
+    <View style={styles.card}>
+      {/* Başlık satırı */}
+      <View style={styles.cardHeader}>
+        <View style={[styles.emojiBox, { backgroundColor: habit.bgColor }]}>
+          <MaterialCommunityIcons name={habit.icon as any} size={22} color={habit.color} />
         </View>
-        <Text style={styles.mCardName} numberOfLines={1}>{habit.name}</Text>
-        <View style={styles.mMonthNav}>
+        <View style={styles.cardInfo}>
+          <Text style={styles.cardName} numberOfLines={1}>{habit.name}</Text>
+        </View>
+        <View style={styles.navControl}>
           <TouchableOpacity onPress={prevMonth} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Text style={styles.mNavArrow}>‹</Text>
+            <Text style={styles.navArrow}>‹</Text>
           </TouchableOpacity>
-          <Text style={styles.mNavLabel}>{MONTH_NAMES_TR[month]}</Text>
+          <View style={styles.navBadge}>
+            <Text style={styles.navBadgeText}>{MONTH_NAMES_TR[month]}</Text>
+          </View>
           <TouchableOpacity onPress={nextMonth} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Text style={styles.mNavArrow}>›</Text>
+            <Text style={styles.navArrow}>›</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -170,12 +180,11 @@ function MonthlyCard({ habit }: { habit: typeof HABITS[number] }) {
       {(() => {
         const perRow = Math.ceil(daysInMonth / 2);
         const GAP = 4;
-        const cardInner = SCREEN_W - 32 - 28; // ekran padding + kart padding
-        const dotSize = Math.floor((cardInner - (perRow - 1) * GAP) / perRow);
+        const dotSize = Math.floor((CARD_INNER - (perRow - 1) * GAP) / perRow);
         const row1 = days.slice(0, perRow);
         const row2 = days.slice(perRow);
         return (
-          <View style={styles.dotGrid}>
+          <View style={[styles.dotGrid, { height: CARD_CONTENT_H, justifyContent: 'center', paddingVertical: 0 }]}>
             <View style={[styles.dotRow2, { gap: GAP }]}>
               {row1.map(d => (
                 <View key={d.num} style={{
@@ -261,27 +270,26 @@ function YearlyCard({ habit, year, onYearChange }: {
       {/* Başlık */}
       <View style={styles.cardHeader}>
         <View style={[styles.emojiBox, { backgroundColor: habit.bgColor }]}>
-          <Text style={styles.emojiText}>{habit.emoji}</Text>
+          <MaterialCommunityIcons name={habit.icon as any} size={22} color={habit.color} />
         </View>
         <View style={styles.cardInfo}>
-          <Text style={styles.cardName}>{habit.name}</Text>
-          <Text style={styles.cardFreq}>{dateLabel(habit.startDate, habit.endDate)}</Text>
+          <Text style={styles.cardName} numberOfLines={1}>{habit.name}</Text>
         </View>
-        <View style={styles.yearPicker}>
-          <TouchableOpacity onPress={() => onYearChange(year - 1)} style={styles.yearArrow}>
-            <Text style={styles.yearArrowText}>‹</Text>
+        <View style={styles.navControl}>
+          <TouchableOpacity onPress={() => onYearChange(year - 1)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.navArrow}>‹</Text>
           </TouchableOpacity>
-          <View style={styles.yearBadge}>
-            <Text style={styles.yearText}>{year}</Text>
+          <View style={styles.navBadge}>
+            <Text style={styles.navBadgeText}>{year}</Text>
           </View>
-          <TouchableOpacity onPress={() => onYearChange(year + 1)} style={styles.yearArrow}>
-            <Text style={styles.yearArrowText}>›</Text>
+          <TouchableOpacity onPress={() => onYearChange(year + 1)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.navArrow}>›</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Heatmap */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ height: CARD_CONTENT_H }}>
         <View>
           {/* Ay etiketleri */}
           <View style={{ flexDirection: 'row', marginBottom: 4 }}>
@@ -345,6 +353,7 @@ export default function StatsScreen() {
       {/* Başlık */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>İstatistikler</Text>
+        <Text style={styles.headerSub}>Alışkanlık takibi</Text>
       </View>
 
       {/* Tab Switcher */}
@@ -399,8 +408,9 @@ export default function StatsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
 
-  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 10 },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: C.text },
+  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 },
+  headerTitle: { fontSize: 24, fontWeight: '700', color: C.text, lineHeight: 30 },
+  headerSub: { fontSize: 13, color: C.muted, marginTop: 3 },
 
   // Tab
   tabWrap: { paddingHorizontal: 16, paddingBottom: 16 },
@@ -440,52 +450,17 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     marginRight: 10, flexShrink: 0,
   },
-  emojiText: { fontSize: 22 },
   cardInfo: { flex: 1 },
   cardName: { fontSize: 15, fontWeight: '700', color: C.text },
-  cardFreq: { fontSize: 12, color: C.muted, marginTop: 2 },
-  pctBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  pctText: { fontSize: 13, fontWeight: '700' },
-
   // Haftalık
   dayRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   dayLabel: { fontSize: 11, fontWeight: '600', color: C.muted, textAlign: 'center' },
   dayCircle: { alignItems: 'center', justifyContent: 'center' },
-  checkMark: { color: C.white, fontSize: 12, fontWeight: '700' },
 
-  // Aylık
-  separator: { height: 1, backgroundColor: C.tabBg, marginBottom: 2 },
-  monthlyHeadRow: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', paddingVertical: 10,
-  },
-  // Aylık kart
-  mCard: {
-    backgroundColor: C.white,
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 10,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 },
-      android: { elevation: 2 },
-    }),
-  },
-  mCardTop: {
-    flexDirection: 'row', alignItems: 'center', marginBottom: 8,
-  },
-  emojiBoxSm: {
-    width: 32, height: 32, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center', marginRight: 8,
-  },
-  mCardName: {
-    flex: 1, fontSize: 14, fontWeight: '700', color: C.text,
-  },
-  mMonthNav: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-  },
-  mNavArrow: { fontSize: 18, fontWeight: '600', color: C.muted },
-  mNavLabel: { fontSize: 12, fontWeight: '700', color: C.text, minWidth: 52, textAlign: 'center' },
+  navControl: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  navArrow: { fontSize: 18, fontWeight: '600', color: C.muted, paddingHorizontal: 2 },
+  navBadge: { backgroundColor: C.tabBg, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
+  navBadgeText: { fontSize: 12, fontWeight: '700', color: C.text, minWidth: 60, textAlign: 'center' },
   dotGrid: {
     paddingVertical: 6,
     gap: 4,
@@ -503,11 +478,5 @@ const styles = StyleSheet.create({
   pctTextSm: { fontSize: 13, fontWeight: '700' },
 
   // Yıllık
-  yearPicker: { flexDirection: 'row', alignItems: 'center' },
-  yearArrow: { paddingHorizontal: 6, paddingVertical: 2 },
-  yearArrowText: { fontSize: 20, color: C.muted },
-  yearBadge: { backgroundColor: '#F6EFEA', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
-  yearText: { fontSize: 13, fontWeight: '700', color: C.text },
   monthLabel: { fontSize: 9, fontWeight: '600', color: C.dayMuted },
-  heatDayLabel: { fontSize: 8, fontWeight: '600', color: '#BBBBBB', textAlign: 'right' },
 });
