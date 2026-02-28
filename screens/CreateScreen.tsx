@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // ── Renk Paleti ────────────────────────────────────────
 const C = {
@@ -26,23 +27,29 @@ const C = {
 
 const SCREEN_H = Dimensions.get('window').height;
 
-// ── Icon listeleri ─────────────────────────────────────
-const ICONS_SPORT = [
-  '🏈','🏆','🎖️','🏀','⛸️','⚽','🎯','🧘','💪','🏊',
-  '🚴','🤸','🏋️','🥊','⛹️','🏇','🤾','🏌️','🎽','🥋',
-  '🧗','🤼','🛹','🏄',
+// ── Icon listeleri (MaterialCommunityIcons) ──────────────
+type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
+
+const ICONS_ACTIVITY: IconName[] = [
+  'run','walk','bike','swim','yoga','dumbbell','basketball','soccer',
+  'tennis','trophy','medal','target','rowing','ski','skateboarding','hiking',
+  'golf','boxing-glove','karate','football','weight-lifter','fencing',
+  'handball','surfing',
 ];
-const ICONS_EMOJI = [
-  '📚','🎵','🌿','💡','🧠','✏️','🎨','🎸','🍎','💤',
-  '🧘‍♀️','🌸','💧','🥗','🧹','📝','🧪','🎯','💰','🌙',
-  '☀️','🤝','❤️','🙏',
+const ICONS_LIFESTYLE: IconName[] = [
+  'book-open-variant','music','leaf','lightbulb','brain','pencil','palette',
+  'guitar-acoustic','food-apple','sleep','flower','water','silverware-fork-knife',
+  'broom','note-text','flask','bullseye','cash','moon-waning-crescent',
+  'white-balance-sunny','handshake','heart','hands-pray',
 ];
 
-// ── Renk listesi ───────────────────────────────────────
+// ── Renk listesi (Figma paleti) ────────────────────────
 const COLORS = [
-  '#F6EFEA','#EFE5DD','#FFF4EA','#F4F8E6','#F8EDE4',
-  '#FDF0F8','#F9F1A5','#F4B97F','#C9B8E8','#B8C2F2',
-  '#8FB8F0','#7BBDAA','#A8E8E8','#ADEBB3',
+  '#E63956','#9B8EC4','#F2B5C8','#F5D547','#3A7C8C',
+  '#1A6B6A','#E84B8A','#9B8DBF','#F5ADA0','#B3C4E8','#7A6B9E',
+  '#A0403E','#5BAA9D','#E8734A','#F5B5C8','#1A2B6B','#C2A84D',
+  '#F53D3D','#A8295A','#F5BA73','#F5B81C','#A8D8E8','#BDE1E6',
+  '#1A5C4C','#5B9E6F','#C2A84D','#F5C523','#8E9EC0','#8BC562',
 ];
 
 // ── Ay isimleri ────────────────────────────────────────
@@ -81,7 +88,7 @@ function DeleteSheet({ visible, onCancel, onConfirm }: {
       <Animated.View style={[styles.sheet, { transform: [{ translateY: slide }] }]}>
         <View style={styles.handle} />
         <View style={styles.deleteIconWrap}>
-          <Text style={{ fontSize: 24 }}>🗑️</Text>
+          <MaterialCommunityIcons name="delete-outline" size={24} color={C.red} />
         </View>
         <Text style={styles.deleteTitle}>Alışkanlığı sil</Text>
         <Text style={styles.deleteSubtitle}>
@@ -107,8 +114,8 @@ function DeleteSheet({ visible, onCancel, onConfirm }: {
 // ════════════════════════════════════════════════════════
 // TAKVİM BOTTOM SHEET
 // ════════════════════════════════════════════════════════
-function CalendarSheet({ visible, title, selectedDate, onConfirm, onCancel }: {
-  visible: boolean; title: string;
+function CalendarSheet({ visible, selectedDate, onConfirm, onCancel }: {
+  visible: boolean;
   selectedDate: Date;
   onConfirm: (d: Date) => void;
   onCancel: () => void;
@@ -142,10 +149,9 @@ function CalendarSheet({ visible, title, selectedDate, onConfirm, onCancel }: {
       <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onCancel} />
       <View style={[styles.sheet, { paddingBottom: 32 }]}>
         <View style={styles.handle} />
-        <Text style={styles.sheetTitle}>{title}</Text>
 
         {/* Takvim */}
-        <View style={styles.calBox}>
+        <View style={[styles.calBox, { marginTop: 8 }]}>
           {/* Ay navigasyonu */}
           <View style={styles.calNavRow}>
             <TouchableOpacity
@@ -228,14 +234,14 @@ function CalendarSheet({ visible, title, selectedDate, onConfirm, onCancel }: {
 // ════════════════════════════════════════════════════════
 // İCON SEÇİCİ BOTTOM SHEET
 // ════════════════════════════════════════════════════════
-function IconPickerSheet({ visible, selectedEmoji, onSelect, onCancel }: {
+function IconPickerSheet({ visible, selectedIcon, onSelect, onCancel }: {
   visible: boolean;
-  selectedEmoji: string;
-  onSelect: (e: string) => void;
+  selectedIcon: IconName;
+  onSelect: (icon: IconName) => void;
   onCancel: () => void;
 }) {
-  const [tab, setTab] = useState<'sport' | 'emoji'>('sport');
-  const list = tab === 'sport' ? ICONS_SPORT : ICONS_EMOJI;
+  const [tab, setTab] = useState<'activity' | 'lifestyle'>('activity');
+  const list = tab === 'activity' ? ICONS_ACTIVITY : ICONS_LIFESTYLE;
 
   if (!visible) return null;
 
@@ -245,21 +251,19 @@ function IconPickerSheet({ visible, selectedEmoji, onSelect, onCancel }: {
       <View style={[styles.sheet, { maxHeight: SCREEN_H * 0.65, paddingBottom: 32 }]}>
         <View style={styles.handle} />
 
-        {/* Başlık */}
         <View style={styles.iconSheetHeader}>
-          <Text style={styles.sheetTitle}>Choose Icon</Text>
+          <Text style={styles.sheetTitle}>İkon Seç</Text>
           <TouchableOpacity
             onPress={onCancel}
             style={styles.iconSheetClose}
             activeOpacity={0.7}
           >
-            <Text style={{ fontSize: 16, color: C.muted }}>✕</Text>
+            <MaterialCommunityIcons name="close" size={18} color={C.muted} />
           </TouchableOpacity>
         </View>
 
-        {/* Tab */}
         <View style={[styles.sheetBtnRow, { paddingHorizontal: 20, marginBottom: 12 }]}>
-          {(['sport', 'emoji'] as const).map(t => (
+          {(['activity', 'lifestyle'] as const).map(t => (
             <TouchableOpacity
               key={t}
               onPress={() => setTab(t)}
@@ -272,13 +276,13 @@ function IconPickerSheet({ visible, selectedEmoji, onSelect, onCancel }: {
                   style={styles.iconTabBtn}
                 >
                   <Text style={[styles.iconTabText, { color: '#fff' }]}>
-                    {t === 'sport' ? '⚡ Icon' : '😊 Emoji'}
+                    {t === 'activity' ? 'Aktivite' : 'Yaşam'}
                   </Text>
                 </LinearGradient>
               ) : (
                 <View style={[styles.iconTabBtn, { backgroundColor: C.tabBg }]}>
                   <Text style={[styles.iconTabText, { color: C.muted }]}>
-                    {t === 'sport' ? '⚡ Icon' : '😊 Emoji'}
+                    {t === 'activity' ? 'Aktivite' : 'Yaşam'}
                   </Text>
                 </View>
               )}
@@ -286,14 +290,13 @@ function IconPickerSheet({ visible, selectedEmoji, onSelect, onCancel }: {
           ))}
         </View>
 
-        {/* Grid */}
         <FlatList
           data={list}
-          keyExtractor={(_, i) => String(i)}
+          keyExtractor={(item) => item}
           numColumns={5}
           contentContainerStyle={{ paddingHorizontal: 16 }}
           renderItem={({ item }) => {
-            const isSelected = selectedEmoji === item;
+            const isSelected = selectedIcon === item;
             return (
               <TouchableOpacity
                 onPress={() => onSelect(item)}
@@ -303,7 +306,11 @@ function IconPickerSheet({ visible, selectedEmoji, onSelect, onCancel }: {
                   { backgroundColor: isSelected ? C.orange : C.tabBg },
                 ]}
               >
-                <Text style={styles.iconCellEmoji}>{item}</Text>
+                <MaterialCommunityIcons
+                  name={item}
+                  size={28}
+                  color={isSelected ? '#fff' : C.text}
+                />
               </TouchableOpacity>
             );
           }}
@@ -314,19 +321,177 @@ function IconPickerSheet({ visible, selectedEmoji, onSelect, onCancel }: {
 }
 
 // ════════════════════════════════════════════════════════
+// SPEKTRUM RENK SEÇİCİ
+// ════════════════════════════════════════════════════════
+const SPECTRUM_SIZE = Dimensions.get('window').width - 72;
+
+function hslToHex(h: number, s: number, l: number) {
+  s /= 100; l /= 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+const CURSOR_SIZE = 30;
+
+function SpectrumPicker({ onColorChange }: {
+  onColorChange: (c: string) => void;
+}) {
+  const [pickedColor, setPickedColor] = useState('#FF8A1F');
+  const [cursorX, setCursorX] = useState(SPECTRUM_SIZE / 2);
+  const [cursorY, setCursorY] = useState(SPECTRUM_SIZE / 3);
+
+  const getColor = (x: number, y: number) => {
+    const hue = (x / SPECTRUM_SIZE) * 360;
+    const light = 100 - (y / SPECTRUM_SIZE) * 100;
+    return hslToHex(hue, 100, Math.max(0, Math.min(100, light)));
+  };
+
+  const handleTouch = (evt: any) => {
+    const { locationX, locationY } = evt.nativeEvent;
+    const cx = Math.max(0, Math.min(SPECTRUM_SIZE, locationX));
+    const cy = Math.max(0, Math.min(SPECTRUM_SIZE, locationY));
+    setCursorX(cx);
+    setCursorY(cy);
+    const c = getColor(cx, cy);
+    setPickedColor(c);
+    onColorChange(c);
+  };
+
+  return (
+    <View style={styles.spectrumWrap}>
+      <View
+        style={[styles.spectrumBox, { width: SPECTRUM_SIZE, height: SPECTRUM_SIZE }]}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderGrant={handleTouch}
+        onResponderMove={handleTouch}
+      >
+        <LinearGradient
+          colors={['#FF0000','#FFFF00','#00FF00','#00FFFF','#0000FF','#FF00FF','#FF0000']}
+          start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <LinearGradient
+          colors={['#FFFFFF', 'transparent']}
+          start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 0.5 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <LinearGradient
+          colors={['transparent', '#000000']}
+          start={{ x: 0.5, y: 0.5 }} end={{ x: 0.5, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+
+        {/* Yuvarlak cursor */}
+        <View
+          pointerEvents="none"
+          style={[styles.spectrumCursor, {
+            left: cursorX - CURSOR_SIZE / 2,
+            top: cursorY - CURSOR_SIZE / 2,
+            backgroundColor: pickedColor,
+          }]}
+        />
+      </View>
+    </View>
+  );
+}
+
+// ════════════════════════════════════════════════════════
+// RENK SEÇİCİ BOTTOM SHEET
+// ════════════════════════════════════════════════════════
+function ColorPickerSheet({ visible, selectedColor, onSelect, onCancel }: {
+  visible: boolean;
+  selectedColor: string;
+  onSelect: (c: string) => void;
+  onCancel: () => void;
+}) {
+  const [showSpectrum, setShowSpectrum] = useState(false);
+
+  if (!visible) return null;
+
+  const dismiss = () => {
+    setShowSpectrum(false);
+    onCancel();
+  };
+
+  return (
+    <Modal transparent animationType="none" visible={visible} onRequestClose={dismiss}>
+      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={dismiss} />
+      <View style={[styles.sheet, { paddingBottom: 36 }]}>
+        <View style={styles.handle} />
+
+        {!showSpectrum && (
+          <View style={styles.iconSheetHeader}>
+            <Text style={styles.sheetTitle}>Renk Seç</Text>
+            <TouchableOpacity onPress={onCancel} style={styles.iconSheetClose} activeOpacity={0.7}>
+              <MaterialCommunityIcons name="close" size={18} color={C.muted} />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {showSpectrum ? (
+          <SpectrumPicker
+            onColorChange={(c) => { onSelect(c); }}
+          />
+        ) : (
+          <View style={styles.cpGrid}>
+            {COLORS.map((color, i) => {
+              const picked = selectedColor === color;
+              return (
+                <TouchableOpacity
+                  key={i}
+                  onPress={() => onSelect(color)}
+                  activeOpacity={0.8}
+                  style={styles.cpCellWrap}
+                >
+                  <View style={[
+                    styles.cpCircle,
+                    { backgroundColor: color },
+                    picked && { borderWidth: 3, borderColor: C.text },
+                  ]} />
+                </TouchableOpacity>
+              );
+            })}
+
+            {/* Gökkuşağı — sağ alt */}
+            <TouchableOpacity
+              style={styles.cpCellWrap}
+              activeOpacity={0.8}
+              onPress={() => setShowSpectrum(true)}
+            >
+              <LinearGradient
+                colors={['#FF6B6B','#FFB347','#FFE66D','#4EC9B0','#74B9FF','#A29BFE','#FD79A8']}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                style={styles.cpCircle}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    </Modal>
+  );
+}
+
+// ════════════════════════════════════════════════════════
 // ANA BİLEŞEN
 // ════════════════════════════════════════════════════════
 export default function CreateScreen() {
   const [taskName, setTaskName]           = useState('Design Competition');
-  const [selectedEmoji, setSelectedEmoji] = useState('🎖️');
+  const [selectedIcon, setSelectedIcon]   = useState<IconName>('medal');
   const [selectedColor, setSelectedColor] = useState('#F6EFEA');
   const [startDate, setStartDate]         = useState(new Date(2025, 0, 1));
   const [endDate, setEndDate]             = useState(new Date(2025, 11, 31));
 
-  const [showDelete,    setShowDelete]    = useState(false);
-  const [showStartCal,  setShowStartCal]  = useState(false);
-  const [showEndCal,    setShowEndCal]    = useState(false);
-  const [showIconPicker, setShowIconPicker] = useState(false);
+  const [showDelete,      setShowDelete]      = useState(false);
+  const [showStartCal,    setShowStartCal]    = useState(false);
+  const [showEndCal,      setShowEndCal]      = useState(false);
+  const [showIconPicker,  setShowIconPicker]  = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -339,7 +504,7 @@ export default function CreateScreen() {
           onPress={() => setShowDelete(true)}
           activeOpacity={0.8}
         >
-          <Text style={{ fontSize: 18 }}>🗑️</Text>
+          <MaterialCommunityIcons name="delete-outline" size={20} color={C.red} />
         </TouchableOpacity>
       </View>
 
@@ -358,7 +523,7 @@ export default function CreateScreen() {
             onPress={() => setShowIconPicker(true)}
             activeOpacity={0.75}
           >
-            <Text style={styles.emojiBtnText}>{selectedEmoji}</Text>
+            <MaterialCommunityIcons name={selectedIcon} size={26} color={C.text} />
           </TouchableOpacity>
           <TextInput
             value={taskName}
@@ -369,37 +534,16 @@ export default function CreateScreen() {
           />
         </View>
 
-        {/* ── Renk Seçici ───────────────────────────── */}
-        <Text style={styles.sectionLabel}>Color</Text>
-        <View style={styles.colorGrid}>
-          {COLORS.map((color, i) => {
-            const isSelected = selectedColor === color;
-            return (
-              <TouchableOpacity
-                key={i}
-                onPress={() => setSelectedColor(color)}
-                activeOpacity={0.8}
-                style={[
-                  styles.colorCircleWrap,
-                  isSelected && styles.colorCircleSelected,
-                ]}
-              >
-                <View style={[styles.colorCircle, { backgroundColor: color }]}>
-                  {isSelected && <Text style={styles.colorCheck}>✓</Text>}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-
-          {/* Gökkuşağı */}
-          <View style={styles.colorCircleWrap}>
-            <LinearGradient
-              colors={['#FF6B6B','#FFB347','#FFE66D','#4EC9B0','#74B9FF','#A29BFE','#FD79A8']}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={styles.colorCircle}
-            />
-          </View>
-        </View>
+        {/* ── Renk Seçici (satır, tıkla → modal) ──── */}
+        <TouchableOpacity
+          style={styles.colorRow}
+          onPress={() => setShowColorPicker(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.colorRowLabel}>Color</Text>
+          <View style={[styles.colorPreview, { backgroundColor: selectedColor }]} />
+          <Text style={styles.colorRowChevron}>›</Text>
+        </TouchableOpacity>
 
         {/* ── Ne Zaman ──────────────────────────────── */}
         <Text style={styles.sectionLabel}>When</Text>
@@ -407,25 +551,25 @@ export default function CreateScreen() {
         {/* Başlangıç tarihi */}
         <Text style={styles.dateSubLabel}>Start Date</Text>
         <TouchableOpacity
-          style={[styles.dateRow, { backgroundColor: selectedColor }]}
+          style={styles.dateRow}
           onPress={() => setShowStartCal(true)}
           activeOpacity={0.8}
         >
-          <Text style={styles.calIcon}>📅</Text>
+          <MaterialCommunityIcons name="calendar-month-outline" size={20} color={C.muted} />
           <Text style={styles.dateText}>{formatDate(startDate)}</Text>
-          <Text style={styles.editIcon}>✏️</Text>
+          <MaterialCommunityIcons name="pencil-outline" size={18} color={C.muted} />
         </TouchableOpacity>
 
         {/* Bitiş tarihi */}
         <Text style={[styles.dateSubLabel, { marginTop: 12 }]}>End Date</Text>
         <TouchableOpacity
-          style={[styles.dateRow, { backgroundColor: selectedColor }]}
+          style={styles.dateRow}
           onPress={() => setShowEndCal(true)}
           activeOpacity={0.8}
         >
-          <Text style={styles.calIcon}>📅</Text>
+          <MaterialCommunityIcons name="calendar-month-outline" size={20} color={C.muted} />
           <Text style={styles.dateText}>{formatDate(endDate)}</Text>
-          <Text style={styles.editIcon}>✏️</Text>
+          <MaterialCommunityIcons name="pencil-outline" size={18} color={C.muted} />
         </TouchableOpacity>
 
         <View style={{ height: 32 }} />
@@ -452,23 +596,27 @@ export default function CreateScreen() {
       />
       <CalendarSheet
         visible={showStartCal}
-        title="Start Date"
         selectedDate={startDate}
         onConfirm={(d) => { setStartDate(d); setShowStartCal(false); }}
         onCancel={() => setShowStartCal(false)}
       />
       <CalendarSheet
         visible={showEndCal}
-        title="End Date"
         selectedDate={endDate}
         onConfirm={(d) => { setEndDate(d); setShowEndCal(false); }}
         onCancel={() => setShowEndCal(false)}
       />
       <IconPickerSheet
         visible={showIconPicker}
-        selectedEmoji={selectedEmoji}
-        onSelect={(e) => { setSelectedEmoji(e); setShowIconPicker(false); }}
+        selectedIcon={selectedIcon}
+        onSelect={(icon) => { setSelectedIcon(icon); setShowIconPicker(false); }}
         onCancel={() => setShowIconPicker(false)}
+      />
+      <ColorPickerSheet
+        visible={showColorPicker}
+        selectedColor={selectedColor}
+        onSelect={(c) => { setSelectedColor(c); }}
+        onCancel={() => setShowColorPicker(false)}
       />
     </SafeAreaView>
   );
@@ -509,38 +657,64 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
   },
-  emojiBtnText: { fontSize: 26 },
   nameInput: {
     flex: 1, fontSize: 15, color: C.text,
     paddingVertical: 4,
   },
 
-  // Renk grid
-  colorGrid: {
+  // Renk satırı (Color row)
+  colorRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 16, paddingHorizontal: 4,
+    borderTopWidth: 1, borderBottomWidth: 1,
+    borderColor: C.border,
+    marginBottom: 28,
+  },
+  colorRowLabel: { flex: 1, fontSize: 16, fontWeight: '700', color: C.text },
+  colorPreview: {
+    width: 48, height: 30, borderRadius: 15,
+  },
+  colorRowChevron: { fontSize: 22, color: '#BBBBBB', marginLeft: 10 },
+
+  // Renk seçici modal grid
+  cpGrid: {
     flexDirection: 'row', flexWrap: 'wrap',
-    gap: 12, marginBottom: 28,
+    justifyContent: 'center',
+    paddingHorizontal: 16, paddingBottom: 8,
+    gap: 12,
   },
-  colorCircleWrap: {
-    width: 52, height: 52, borderRadius: 26,
-    borderWidth: 2.5, borderColor: 'transparent',
+  cpCellWrap: {
     alignItems: 'center', justifyContent: 'center',
   },
-  colorCircleSelected: { borderColor: C.text },
-  colorCircle: {
-    width: 44, height: 44, borderRadius: 22,
-    alignItems: 'center', justifyContent: 'center',
+  cpCircle: {
+    width: 48, height: 48, borderRadius: 24,
   },
-  colorCheck: { fontSize: 14, fontWeight: '700', color: C.text },
+
+  // Spektrum
+  spectrumWrap: {
+    alignItems: 'center', paddingHorizontal: 20, paddingBottom: 16,
+  },
+  spectrumBox: {
+    borderRadius: 16, overflow: 'hidden',
+  },
+  spectrumCursor: {
+    position: 'absolute',
+    width: CURSOR_SIZE, height: CURSOR_SIZE, borderRadius: CURSOR_SIZE / 2,
+    borderWidth: 3, borderColor: '#FFFFFF',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4 },
+      android: { elevation: 6 },
+    }),
+  },
 
   // Tarih satırı
   dateSubLabel: { fontSize: 12, fontWeight: '600', color: C.muted, marginBottom: 6, marginLeft: 4 },
   dateRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     borderRadius: 14, paddingHorizontal: 18, paddingVertical: 14,
+    backgroundColor: '#F6EFEA',
   },
-  calIcon: { fontSize: 18 },
   dateText: { flex: 1, fontSize: 15, color: C.text },
-  editIcon: { fontSize: 14 },
 
   // Kaydet
   saveWrap: { paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 24 : 16, paddingTop: 8 },
@@ -630,5 +804,4 @@ const styles = StyleSheet.create({
     flex: 1, aspectRatio: 1, margin: 4, borderRadius: 16,
     alignItems: 'center', justifyContent: 'center',
   },
-  iconCellEmoji: { fontSize: 28 },
 });

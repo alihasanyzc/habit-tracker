@@ -26,6 +26,7 @@ const DAY_LABELS_LONG  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const DAY_LABELS_SHORT = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const SUN_IDX = 6;
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTH_NAMES_TR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
 // ── Seed'li sahte-rastgele ─────────────────────────────
 function sr(seed: number) {
@@ -41,12 +42,25 @@ function buildGrid(weeks: number, id: number, rate: number, skipWknd: boolean): 
   );
 }
 
+// ── Tarih formatlama ─────────────────────────────────
+function fmtDate(d: Date) {
+  const day = d.getDate();
+  const mon = MONTH_NAMES_TR[d.getMonth()].slice(0, 3);
+  const yr = d.getFullYear();
+  return `${day} ${mon} ${yr}`;
+}
+
+function dateLabel(start: Date, end?: Date) {
+  if (end) return `${fmtDate(start)} — ${fmtDate(end)}`;
+  return `${fmtDate(start)} — Devam ediyor`;
+}
+
 // ── Alışkanlık verisi ──────────────────────────────────
 const HABITS = [
-  { id: 1, name: 'Set Small Goals', emoji: '🎯', freq: 'Everyday',        color: '#FF8A1F', bgColor: '#FFF4EA', rate: 0.88, skipWknd: false, week: [true,true,true,true,true,true,false] },
-  { id: 2, name: 'Meditation',      emoji: '😇', freq: '5 days per week', color: '#8FB339', bgColor: '#F4F8E6', rate: 0.68, skipWknd: true,  week: [true,true,true,false,true,false,false] },
-  { id: 3, name: 'Work',            emoji: '🏆', freq: 'Everyday',        color: '#A35414', bgColor: '#F8EDE4', rate: 0.79, skipWknd: false, week: [true,true,true,true,true,true,false] },
-  { id: 4, name: 'Sleep Over 8h',   emoji: '🥰', freq: 'Everyday',        color: '#E78AC3', bgColor: '#FDF0F8', rate: 0.72, skipWknd: false, week: [true,true,true,true,true,true,true] },
+  { id: 1, name: 'Set Small Goals', emoji: '🎯', startDate: new Date(2025, 0, 15), endDate: undefined,              color: '#FF8A1F', bgColor: '#FFF4EA', rate: 0.88, skipWknd: false, week: [true,true,true,true,true,true,false] },
+  { id: 2, name: 'Meditation',      emoji: '😇', startDate: new Date(2025, 2, 1),  endDate: new Date(2025, 8, 30),  color: '#8FB339', bgColor: '#F4F8E6', rate: 0.68, skipWknd: true,  week: [true,true,true,false,true,false,false] },
+  { id: 3, name: 'Work',            emoji: '🏆', startDate: new Date(2025, 1, 10), endDate: undefined,              color: '#A35414', bgColor: '#F8EDE4', rate: 0.79, skipWknd: false, week: [true,true,true,true,true,true,false] },
+  { id: 4, name: 'Sleep Over 8h',   emoji: '🥰', startDate: new Date(2025, 3, 1),  endDate: new Date(2026, 3, 1),   color: '#E78AC3', bgColor: '#FDF0F8', rate: 0.72, skipWknd: false, week: [true,true,true,true,true,true,true] },
 ];
 
 // ── Yardımcı: Ekran genişliğine göre kart içi genişlik ─
@@ -69,7 +83,7 @@ function WeeklyCard({ habit }: { habit: typeof HABITS[number] }) {
         </View>
         <View style={styles.cardInfo}>
           <Text style={styles.cardName}>{habit.name}</Text>
-          <Text style={styles.cardFreq}>{habit.freq}</Text>
+          <Text style={styles.cardFreq}>{dateLabel(habit.startDate, habit.endDate)}</Text>
         </View>
         <View style={[styles.pctBadge, { backgroundColor: habit.bgColor }]}>
           <Text style={[styles.pctText, { color: habit.color }]}>{pct}%</Text>
@@ -104,78 +118,143 @@ function WeeklyCard({ habit }: { habit: typeof HABITS[number] }) {
 }
 
 // ════════════════════════════════════════════════════════
-// AYLIK KART — nokta grid
+// AYLIK KART — gerçek takvim nokta grid
 // ════════════════════════════════════════════════════════
 function MonthlyCard({ habit }: { habit: typeof HABITS[number] }) {
-  const WEEKS = 20;
-  const DOT = 10;
-  const GAP = 4;
-  const grid = buildGrid(WEEKS, habit.id, habit.rate, habit.skipWknd);
+  const now = new Date();
+  const [month, setMonth] = useState(now.getMonth());
+  const [year, setYear]   = useState(now.getFullYear());
+
+  const prevMonth = () => {
+    if (month === 0) { setMonth(11); setYear(y => y - 1); }
+    else setMonth(m => m - 1);
+  };
+  const nextMonth = () => {
+    if (month === 11) { setMonth(0); setYear(y => y + 1); }
+    else setMonth(m => m + 1);
+  };
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const isDone = (dayNum: number) =>
+    sr(habit.id * 1234 + year * 400 + month * 31 + dayNum) < habit.rate;
+
+  const days = Array.from({ length: daysInMonth }, (_, i) => ({
+    num: i + 1,
+    done: isDone(i + 1),
+  }));
+
+  const doneDays = days.filter(d => d.done).length;
+  const pct = Math.round((doneDays / daysInMonth) * 100);
 
   return (
-    <View style={styles.card}>
-      {/* Başlık */}
-      <View style={styles.cardHeader}>
-        <View style={[styles.emojiBox, { backgroundColor: habit.bgColor }]}>
-          <Text style={styles.emojiText}>{habit.emoji}</Text>
+    <View style={styles.mCard}>
+      {/* Üst satır: emoji+isim solda, ay nav sağda */}
+      <View style={styles.mCardTop}>
+        <View style={[styles.emojiBoxSm, { backgroundColor: habit.bgColor }]}>
+          <Text style={{ fontSize: 16 }}>{habit.emoji}</Text>
         </View>
-        <View style={styles.cardInfo}>
-          <Text style={styles.cardName}>{habit.name}</Text>
-          <Text style={styles.cardFreq}>{habit.freq}</Text>
-        </View>
-        <View style={[styles.pctBadge, { backgroundColor: habit.bgColor }]}>
-          <Text style={[styles.pctText, { color: habit.color }]}>
-            {Math.round(habit.rate * 100)}%
-          </Text>
+        <Text style={styles.mCardName} numberOfLines={1}>{habit.name}</Text>
+        <View style={styles.mMonthNav}>
+          <TouchableOpacity onPress={prevMonth} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.mNavArrow}>‹</Text>
+          </TouchableOpacity>
+          <Text style={styles.mNavLabel}>{MONTH_NAMES_TR[month]}</Text>
+          <TouchableOpacity onPress={nextMonth} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.mNavArrow}>›</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
-      {/* Ayırıcı */}
-      <View style={styles.separator} />
-
-      {/* Başlık satırı */}
-      <View style={styles.monthlyHeadRow}>
-        <Text style={styles.monthlyTitle}>Aylık Görünüm</Text>
-        <Text style={styles.monthlySubtitle}>Son {WEEKS} hafta</Text>
-      </View>
-
-      {/* Nokta grid */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View>
-          {DAY_LABELS_SHORT.map((lbl, dayIdx) => (
-            <View key={dayIdx} style={[styles.dotRow, { marginBottom: GAP }]}>
-              <Text style={[
-                styles.dotDayLabel,
-                dayIdx === SUN_IDX && { color: C.orange },
-              ]}>{lbl}</Text>
-              {grid.map((week, wIdx) => (
-                <View key={wIdx} style={[
-                  { width: DOT, height: DOT, borderRadius: DOT / 2, marginRight: GAP },
-                  { backgroundColor: week[dayIdx] ? habit.color : C.dot },
-                ]} />
+      {/* Nokta grid — tam 2 satır */}
+      {(() => {
+        const perRow = Math.ceil(daysInMonth / 2);
+        const GAP = 4;
+        const cardInner = SCREEN_W - 32 - 28; // ekran padding + kart padding
+        const dotSize = Math.floor((cardInner - (perRow - 1) * GAP) / perRow);
+        const row1 = days.slice(0, perRow);
+        const row2 = days.slice(perRow);
+        return (
+          <View style={styles.dotGrid}>
+            <View style={[styles.dotRow2, { gap: GAP }]}>
+              {row1.map(d => (
+                <View key={d.num} style={{
+                  width: dotSize, height: dotSize, borderRadius: dotSize / 2,
+                  backgroundColor: d.done ? habit.color : C.dot,
+                }} />
               ))}
             </View>
-          ))}
+            <View style={[styles.dotRow2, { gap: GAP }]}>
+              {row2.map(d => (
+                <View key={d.num} style={{
+                  width: dotSize, height: dotSize, borderRadius: dotSize / 2,
+                  backgroundColor: d.done ? habit.color : C.dot,
+                }} />
+              ))}
+            </View>
+          </View>
+        );
+      })()}
+
+      {/* Alt satır: gün sayısı solda, yüzde sağda */}
+      <View style={styles.mCardBottom}>
+        <Text style={styles.mBottomText}>{doneDays}/{daysInMonth} gün</Text>
+        <View style={[styles.pctBadgeSm, { backgroundColor: habit.bgColor }]}>
+          <Text style={[styles.pctTextSm, { color: habit.color }]}>{pct}%</Text>
         </View>
-      </ScrollView>
+      </View>
     </View>
   );
 }
 
 // ════════════════════════════════════════════════════════
-// YILLIK KART — GitHub Heatmap
+// YILLIK KART — gerçek 365/366 gün heatmap
 // ════════════════════════════════════════════════════════
 function YearlyCard({ habit, year, onYearChange }: {
   habit: typeof HABITS[number];
   year: number;
   onYearChange: (y: number) => void;
 }) {
-  const WEEKS = 52;
   const SQ = 7;
   const SQ_GAP = 2;
   const CELL = SQ + SQ_GAP;
-  const grid = buildGrid(WEEKS, habit.id + year * 100, habit.rate, habit.skipWknd);
-  const monthStarts = [0, 4, 9, 13, 17, 22, 26, 30, 35, 39, 43, 48];
+
+  const jan1 = new Date(year, 0, 1);
+  const dec31 = new Date(year, 11, 31);
+  const totalDays = Math.round((dec31.getTime() - jan1.getTime()) / 86400000) + 1;
+
+  const rawStart = jan1.getDay(); // 0=Paz
+  const startOffset = rawStart === 0 ? 6 : rawStart - 1; // Pazartesi bazlı
+
+  const totalSlots = startOffset + totalDays;
+  const totalWeeks = Math.ceil(totalSlots / 7);
+
+  // Her slot için gün numarası (0-based, yılın kaçıncı günü) veya -1 (boş)
+  const isDone = (dayOfYear: number) =>
+    sr(habit.id * 1234 + year * 400 + dayOfYear) < habit.rate;
+
+  // Haftalar dizisi: weeks[weekIdx][dayIdx] = dayOfYear | -1
+  const weeks: number[][] = Array.from({ length: totalWeeks }, (_, w) =>
+    Array.from({ length: 7 }, (_, d) => {
+      const slot = w * 7 + d;
+      const dayOfYear = slot - startOffset;
+      return (dayOfYear >= 0 && dayOfYear < totalDays) ? dayOfYear : -1;
+    })
+  );
+
+  // Ay etiketlerinin konumlarını hesapla
+  const monthWeekStarts: number[] = [];
+  for (let m = 0; m < 12; m++) {
+    const firstOfMonth = new Date(year, m, 1);
+    const dayOfYear = Math.round((firstOfMonth.getTime() - jan1.getTime()) / 86400000);
+    const slot = dayOfYear + startOffset;
+    monthWeekStarts.push(Math.floor(slot / 7));
+  }
+
+  let doneDays = 0;
+  for (let d = 0; d < totalDays; d++) {
+    if (isDone(d)) doneDays++;
+  }
 
   return (
     <View style={styles.card}>
@@ -186,9 +265,8 @@ function YearlyCard({ habit, year, onYearChange }: {
         </View>
         <View style={styles.cardInfo}>
           <Text style={styles.cardName}>{habit.name}</Text>
-          <Text style={styles.cardFreq}>{habit.freq}</Text>
+          <Text style={styles.cardFreq}>{dateLabel(habit.startDate, habit.endDate)}</Text>
         </View>
-        {/* Yıl seçici */}
         <View style={styles.yearPicker}>
           <TouchableOpacity onPress={() => onYearChange(year - 1)} style={styles.yearArrow}>
             <Text style={styles.yearArrowText}>‹</Text>
@@ -206,9 +284,9 @@ function YearlyCard({ habit, year, onYearChange }: {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
         <View>
           {/* Ay etiketleri */}
-          <View style={{ flexDirection: 'row', marginLeft: 16, marginBottom: 4 }}>
-            {monthStarts.map((startWeek, mIdx) => {
-              const endWeek = mIdx < 11 ? monthStarts[mIdx + 1] : WEEKS;
+          <View style={{ flexDirection: 'row', marginBottom: 4 }}>
+            {monthWeekStarts.map((startWeek, mIdx) => {
+              const endWeek = mIdx < 11 ? monthWeekStarts[mIdx + 1] : totalWeeks;
               return (
                 <View key={mIdx} style={{ width: (endWeek - startWeek) * CELL }}>
                   <Text style={styles.monthLabel}>{MONTH_NAMES[mIdx]}</Text>
@@ -218,45 +296,33 @@ function YearlyCard({ habit, year, onYearChange }: {
           </View>
 
           {/* Grid */}
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-            {/* Gün etiketleri */}
-            <View style={{ marginRight: 4 }}>
-              {['M','','W','','F','','S'].map((d, i) => (
-                <View key={i} style={{ height: SQ, marginBottom: SQ_GAP, width: 12, justifyContent: 'center' }}>
-                  <Text style={[styles.heatDayLabel, i === 6 && { color: habit.color }]}>{d}</Text>
-                </View>
-              ))}
-            </View>
-
-            {/* Haftalar */}
-            <View style={{ flexDirection: 'row', gap: SQ_GAP }}>
-              {grid.map((week, wIdx) => (
-                <View key={wIdx} style={{ flexDirection: 'column', gap: SQ_GAP }}>
-                  {week.map((done, dIdx) => (
-                    <View key={dIdx} style={{
-                      width: SQ, height: SQ, borderRadius: 1.5,
-                      backgroundColor: done ? habit.color : C.dot,
-                    }} />
-                  ))}
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {/* Legend */}
-          <View style={styles.legendRow}>
-            <Text style={styles.legendLabel}>Az</Text>
-            {[0, 1, 2, 3, 4, 5].map((i) => (
-              <View key={i} style={{
-                width: SQ, height: SQ, borderRadius: 1.5, marginLeft: SQ_GAP,
-                backgroundColor: i === 0 ? C.dot : habit.color,
-                opacity: i === 0 ? 1 : 0.3 + i * 0.14,
-              }} />
+          <View style={{ flexDirection: 'row', gap: SQ_GAP }}>
+            {weeks.map((week, wIdx) => (
+              <View key={wIdx} style={{ flexDirection: 'column', gap: SQ_GAP }}>
+                {week.map((dayOfYear, dIdx) => (
+                  <View key={dIdx} style={{
+                    width: SQ, height: SQ, borderRadius: SQ / 2,
+                    backgroundColor: dayOfYear === -1
+                      ? 'transparent'
+                      : (isDone(dayOfYear) ? habit.color : C.dot),
+                  }} />
+                ))}
+              </View>
             ))}
-            <Text style={[styles.legendLabel, { marginLeft: SQ_GAP }]}>Çok</Text>
           </View>
+
         </View>
       </ScrollView>
+
+      {/* Alt satır: gün sayısı solda, yüzde sağda */}
+      <View style={styles.mCardBottom}>
+        <Text style={styles.mBottomText}>{doneDays}/{totalDays} gün</Text>
+        <View style={[styles.pctBadgeSm, { backgroundColor: habit.bgColor }]}>
+          <Text style={[styles.pctTextSm, { color: habit.color }]}>
+            {Math.round((doneDays / totalDays) * 100)}%
+          </Text>
+        </View>
+      </View>
     </View>
   );
 }
@@ -393,10 +459,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'center', paddingVertical: 10,
   },
-  monthlyTitle: { fontSize: 13, fontWeight: '700', color: C.text },
-  monthlySubtitle: { fontSize: 11, color: C.muted },
-  dotRow: { flexDirection: 'row', alignItems: 'center' },
-  dotDayLabel: { width: 14, fontSize: 10, fontWeight: '600', color: C.dayMuted, marginRight: 6 },
+  // Aylık kart
+  mCard: {
+    backgroundColor: C.white,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 10,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 },
+      android: { elevation: 2 },
+    }),
+  },
+  mCardTop: {
+    flexDirection: 'row', alignItems: 'center', marginBottom: 8,
+  },
+  emojiBoxSm: {
+    width: 32, height: 32, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center', marginRight: 8,
+  },
+  mCardName: {
+    flex: 1, fontSize: 14, fontWeight: '700', color: C.text,
+  },
+  mMonthNav: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+  },
+  mNavArrow: { fontSize: 18, fontWeight: '600', color: C.muted },
+  mNavLabel: { fontSize: 12, fontWeight: '700', color: C.text, minWidth: 52, textAlign: 'center' },
+  dotGrid: {
+    paddingVertical: 6,
+    gap: 4,
+  },
+  dotRow2: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  mCardBottom: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', marginTop: 8,
+  },
+  mBottomText: { fontSize: 13, color: C.muted, fontWeight: '600' },
+  pctBadgeSm: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 3 },
+  pctTextSm: { fontSize: 13, fontWeight: '700' },
 
   // Yıllık
   yearPicker: { flexDirection: 'row', alignItems: 'center' },
@@ -406,6 +510,4 @@ const styles = StyleSheet.create({
   yearText: { fontSize: 13, fontWeight: '700', color: C.text },
   monthLabel: { fontSize: 9, fontWeight: '600', color: C.dayMuted },
   heatDayLabel: { fontSize: 8, fontWeight: '600', color: '#BBBBBB', textAlign: 'right' },
-  legendRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, justifyContent: 'flex-end' },
-  legendLabel: { fontSize: 9, color: C.dayMuted },
 });
