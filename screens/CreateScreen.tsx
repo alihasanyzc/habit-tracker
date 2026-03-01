@@ -9,7 +9,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // ── Renk Paleti ────────────────────────────────────────
 const C = {
-  bg: '#FFFFFF',
+  bg: '#F6EFEA',
   orange: '#FF8A1F',
   orangeDark: '#E06B00',
   red: '#E85A4F',
@@ -31,37 +31,37 @@ const SCREEN_H = Dimensions.get('window').height;
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
 const ICONS_ACTIVITY: IconName[] = [
-  'run','walk','bike','swim','yoga','dumbbell','basketball','soccer',
-  'tennis','trophy','medal','target','rowing','ski','skateboarding','hiking',
-  'golf','boxing-glove','karate','football','weight-lifter','fencing',
-  'handball','surfing',
+  'run', 'walk', 'bike', 'swim', 'yoga', 'dumbbell', 'basketball', 'soccer',
+  'tennis', 'trophy', 'medal', 'target', 'rowing', 'ski', 'skateboarding', 'hiking',
+  'golf', 'boxing-glove', 'karate', 'football', 'weight-lifter', 'fencing',
+  'handball', 'surfing',
 ];
 const ICONS_LIFESTYLE: IconName[] = [
-  'book-open-variant','music','leaf','lightbulb','brain','pencil','palette',
-  'guitar-acoustic','food-apple','sleep','flower','water','silverware-fork-knife',
-  'broom','note-text','flask','bullseye','cash','moon-waning-crescent',
-  'white-balance-sunny','handshake','heart','hands-pray',
+  'book-open-variant', 'music', 'leaf', 'lightbulb', 'brain', 'pencil', 'palette',
+  'guitar-acoustic', 'food-apple', 'sleep', 'flower', 'water', 'silverware-fork-knife',
+  'broom', 'note-text', 'flask', 'bullseye', 'cash', 'moon-waning-crescent',
+  'white-balance-sunny', 'handshake', 'heart', 'hands-pray',
 ];
 
 // ── Renk listesi (Figma paleti) ────────────────────────
 const COLORS = [
-  '#E63956','#9B8EC4','#F2B5C8','#F5D547','#3A7C8C',
-  '#1A6B6A','#E84B8A','#9B8DBF','#F5ADA0','#B3C4E8','#7A6B9E',
-  '#A0403E','#5BAA9D','#E8734A','#F5B5C8','#1A2B6B','#C2A84D',
-  '#F53D3D','#A8295A','#F5BA73','#F5B81C','#A8D8E8','#BDE1E6',
-  '#1A5C4C','#5B9E6F','#C2A84D','#F5C523','#8E9EC0','#8BC562',
+  '#E63956', '#9B8EC4', '#F2B5C8', '#F5D547', '#3A7C8C',
+  '#1A6B6A', '#E84B8A', '#9B8DBF', '#F5ADA0', '#B3C4E8', '#7A6B9E',
+  '#A0403E', '#5BAA9D', '#E8734A', '#F5B5C8', '#1A2B6B', '#C2A84D',
+  '#F53D3D', '#A8295A', '#F5BA73', '#F5B81C', '#A8D8E8', '#BDE1E6',
+  '#1A5C4C', '#5B9E6F', '#C2A84D', '#F5C523', '#8E9EC0', '#8BC562',
 ];
 
 // ── Ay isimleri ────────────────────────────────────────
 const MONTH_NAMES = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December',
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
 ];
-const DAY_LABELS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
 // ── Tarih formatlama ────────────────────────────────────
 function formatDate(d: Date) {
-  return `${MONTH_NAMES[d.getMonth()].slice(0,3)} ${d.getDate()}, ${d.getFullYear()}`;
+  return `${MONTH_NAMES[d.getMonth()].slice(0, 3)} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
 // ════════════════════════════════════════════════════════
@@ -123,10 +123,10 @@ function CalendarSheet({ visible, selectedDate, onConfirm, onCancel }: {
   const [viewDate, setViewDate] = useState(new Date(selectedDate));
   const [pickedDate, setPickedDate] = useState(new Date(selectedDate));
 
-  const year  = viewDate.getFullYear();
+  const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
 
-  const firstDay    = new Date(year, month, 1).getDay();
+  const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const prevMonthDays = new Date(year, month, 0).getDate();
 
@@ -372,7 +372,7 @@ function SpectrumPicker({ onColorChange }: {
         onResponderMove={handleTouch}
       >
         <LinearGradient
-          colors={['#FF0000','#FFFF00','#00FF00','#00FFFF','#0000FF','#FF00FF','#FF0000']}
+          colors={['#FF0000', '#FFFF00', '#00FF00', '#00FFFF', '#0000FF', '#FF00FF', '#FF0000']}
           start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }}
           style={StyleSheet.absoluteFill}
         />
@@ -465,7 +465,7 @@ function ColorPickerSheet({ visible, selectedColor, onSelect, onCancel }: {
               onPress={() => setShowSpectrum(true)}
             >
               <LinearGradient
-                colors={['#FF6B6B','#FFB347','#FFE66D','#4EC9B0','#74B9FF','#A29BFE','#FD79A8']}
+                colors={['#FF6B6B', '#FFB347', '#FFE66D', '#4EC9B0', '#74B9FF', '#A29BFE', '#FD79A8']}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 style={styles.cpCircle}
               />
@@ -481,16 +481,16 @@ function ColorPickerSheet({ visible, selectedColor, onSelect, onCancel }: {
 // ANA BİLEŞEN
 // ════════════════════════════════════════════════════════
 export default function CreateScreen() {
-  const [taskName, setTaskName]           = useState('Design Competition');
-  const [selectedIcon, setSelectedIcon]   = useState<IconName>('medal');
+  const [taskName, setTaskName] = useState('Design Competition');
+  const [selectedIcon, setSelectedIcon] = useState<IconName>('medal');
   const [selectedColor, setSelectedColor] = useState('#F6EFEA');
-  const [startDate, setStartDate]         = useState(new Date(2025, 0, 1));
-  const [endDate, setEndDate]             = useState(new Date(2025, 11, 31));
+  const [startDate, setStartDate] = useState(new Date(2025, 0, 1));
+  const [endDate, setEndDate] = useState(new Date(2025, 11, 31));
 
-  const [showDelete,      setShowDelete]      = useState(false);
-  const [showStartCal,    setShowStartCal]    = useState(false);
-  const [showEndCal,      setShowEndCal]      = useState(false);
-  const [showIconPicker,  setShowIconPicker]  = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [showStartCal, setShowStartCal] = useState(false);
+  const [showEndCal, setShowEndCal] = useState(false);
+  const [showIconPicker, setShowIconPicker] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
 
   return (
@@ -776,7 +776,7 @@ const styles = StyleSheet.create({
   calDayLabel: { flex: 1, textAlign: 'center', fontSize: 13, fontWeight: '600', color: '#9A9A9A', paddingBottom: 6 },
   calGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   calCell: {
-    width: `${100/7}%` as any,
+    width: `${100 / 7}%` as any,
     aspectRatio: 1,
     alignItems: 'center', justifyContent: 'center',
     borderRadius: 100,

@@ -82,7 +82,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 // ── Navigator ────────────────────────────────────────
 export default function AppNavigator() {
   return (
-    <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+    <View style={{ flex: 1, backgroundColor: '#F6EFEA' }}>
       <NavigationContainer>
         <Tab.Navigator
           tabBar={props => <CustomTabBar {...props} />}

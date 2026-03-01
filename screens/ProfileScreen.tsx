@@ -6,10 +6,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { Feather } from '@expo/vector-icons';
 
 // ── Renk Paleti ────────────────────────────────────────
 const C = {
-  bg: '#FFFFFF',
+  bg: '#F6EFEA',
   cream: '#F6EFEA',
   beige: '#EFE5DD',
   beigeDeep: '#E3D5CC',
@@ -25,14 +26,14 @@ const C = {
 
 // ── Menü Öğeleri ───────────────────────────────────────
 const MENU_ITEMS = [
-  { emoji: '⚙️',  label: 'Preferences',             accent: C.orange },
-  { emoji: '👤',  label: 'Personal Info',            accent: C.green  },
-  { emoji: '💳',  label: 'Payment Methods',          accent: C.brown  },
-  { emoji: '⭐',  label: 'Billing & Subscriptions',  accent: C.pink   },
-  { emoji: '🛡️', label: 'Account & Security',       accent: C.orange },
-  { emoji: '↕️',  label: 'Linked Accounts',          accent: C.green  },
-  { emoji: '👁️', label: 'App Appearance',           accent: C.brown  },
-  { emoji: '📊',  label: 'Data & Analytics',         accent: C.pink   },
+  { icon: 'settings', label: 'Preferences', accent: C.orange },
+  { icon: 'user', label: 'Personal Info', accent: C.green },
+  { icon: 'credit-card', label: 'Payment Methods', accent: C.brown },
+  { icon: 'star', label: 'Billing & Subscriptions', accent: C.pink },
+  { icon: 'shield', label: 'Account & Security', accent: C.orange },
+  { icon: 'link', label: 'Linked Accounts', accent: C.green },
+  { icon: 'eye', label: 'App Appearance', accent: C.brown },
+  { icon: 'bar-chart-2', label: 'Data & Analytics', accent: C.pink },
 ];
 
 // ── Yüz Avatar (SVG) ───────────────────────────────────
@@ -55,7 +56,7 @@ function FaceAvatar() {
 // ANA BİLEŞEN
 // ════════════════════════════════════════════════════════
 export default function ProfileScreen() {
-  const [name, setName]     = useState('No Name');
+  const [name, setName] = useState('No Name');
   const [editing, setEditing] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
@@ -103,14 +104,14 @@ export default function ProfileScreen() {
                   activeOpacity={0.7}
                 >
                   <Text style={styles.nameText}>{name}</Text>
-                  <Text style={styles.editIcon}>✏️</Text>
+                  <Feather name="edit-2" size={15} color={C.text} style={{ marginLeft: 4 }} />
                 </TouchableOpacity>
               )}
             </View>
 
             {/* Ayarlar ikonu */}
             <TouchableOpacity style={styles.settingsBtn} activeOpacity={0.7}>
-              <Text style={styles.settingsIcon}>⚙️</Text>
+              <Feather name="settings" size={24} color={C.text} />
             </TouchableOpacity>
 
           </View>
@@ -136,14 +137,14 @@ export default function ProfileScreen() {
               >
                 {/* İkon kutusu */}
                 <View style={[styles.iconBox, { backgroundColor: C.cream }]}>
-                  <Text style={styles.menuEmoji}>{item.emoji}</Text>
+                  <Feather name={item.icon as any} size={20} color={item.accent} />
                 </View>
 
                 {/* Etiket */}
                 <Text style={styles.menuLabel}>{item.label}</Text>
 
                 {/* Chevron */}
-                <Text style={styles.chevron}>›</Text>
+                <Feather name="chevron-right" size={22} color={C.chevron} />
               </TouchableOpacity>
             );
           })}
