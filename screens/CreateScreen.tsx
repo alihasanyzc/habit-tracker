@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, Modal, Animated, Dimensions, FlatList, Platform,
+  TextInput, Modal, Dimensions, FlatList, Platform, Alert, Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -55,61 +55,14 @@ const COLORS = [
 
 // ── Ay isimleri ────────────────────────────────────────
 const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
 ];
-const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const DAY_LABELS = ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'];
 
 // ── Tarih formatlama ────────────────────────────────────
 function formatDate(d: Date) {
-  return `${MONTH_NAMES[d.getMonth()].slice(0, 3)} ${d.getDate()}, ${d.getFullYear()}`;
-}
-
-// ════════════════════════════════════════════════════════
-// SİLME ONAY BOTTOM SHEET
-// ════════════════════════════════════════════════════════
-function DeleteSheet({ visible, onCancel, onConfirm }: {
-  visible: boolean; onCancel: () => void; onConfirm: () => void;
-}) {
-  const slide = useRef(new Animated.Value(300)).current;
-
-  React.useEffect(() => {
-    Animated.spring(slide, {
-      toValue: visible ? 0 : 300,
-      useNativeDriver: true,
-      damping: 25, stiffness: 300,
-    }).start();
-  }, [visible]);
-
-  if (!visible) return null;
-
-  return (
-    <Modal transparent animationType="fade" visible={visible} onRequestClose={onCancel}>
-      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onCancel} />
-      <Animated.View style={[styles.sheet, { transform: [{ translateY: slide }] }]}>
-        <View style={styles.handle} />
-        <View style={styles.deleteIconWrap}>
-          <MaterialCommunityIcons name="delete-outline" size={24} color={C.red} />
-        </View>
-        <Text style={styles.deleteTitle}>Alışkanlığı sil</Text>
-        <Text style={styles.deleteSubtitle}>
-          Bu alışkanlığı silmek istediğinizden emin misiniz?
-        </Text>
-        <View style={styles.sheetBtnRow}>
-          <TouchableOpacity style={styles.cancelBtn} onPress={onCancel} activeOpacity={0.8}>
-            <Text style={styles.cancelBtnText}>İptal</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.cancelBtn, { backgroundColor: C.red, flex: 1 }]}
-            onPress={onConfirm}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.cancelBtnText, { color: '#fff' }]}>Sil</Text>
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
-    </Modal>
-  );
+  return `${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 // ════════════════════════════════════════════════════════
@@ -211,7 +164,7 @@ function CalendarSheet({ visible, selectedDate, onConfirm, onCancel }: {
             style={[styles.cancelBtn, { backgroundColor: C.purpleLight, flex: 1 }]}
             onPress={onCancel} activeOpacity={0.8}
           >
-            <Text style={[styles.cancelBtnText, { color: C.purple }]}>Cancel</Text>
+            <Text style={[styles.cancelBtnText, { color: C.purple }]}>İptal</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={{ flex: 1 }}
@@ -223,7 +176,7 @@ function CalendarSheet({ visible, selectedDate, onConfirm, onCancel }: {
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
               style={styles.cancelBtn}
             >
-              <Text style={[styles.cancelBtnText, { color: '#fff' }]}>OK</Text>
+              <Text style={[styles.cancelBtnText, { color: '#fff' }]}>Tamam</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -339,8 +292,9 @@ function hslToHex(h: number, s: number, l: number) {
 
 const CURSOR_SIZE = 30;
 
-function SpectrumPicker({ onColorChange }: {
+function SpectrumPicker({ onColorChange, onBack }: {
   onColorChange: (c: string) => void;
+  onBack: () => void;
 }) {
   const [pickedColor, setPickedColor] = useState('#FF8A1F');
   const [cursorX, setCursorX] = useState(SPECTRUM_SIZE / 2);
@@ -365,6 +319,16 @@ function SpectrumPicker({ onColorChange }: {
 
   return (
     <View style={styles.spectrumWrap}>
+      {/* Geri butonu */}
+      <TouchableOpacity
+        onPress={onBack}
+        activeOpacity={0.7}
+        style={styles.spectrumBackBtn}
+      >
+        <MaterialCommunityIcons name="arrow-left" size={18} color={C.text} />
+        <Text style={styles.spectrumBackText}>Palette</Text>
+      </TouchableOpacity>
+
       <View
         style={[styles.spectrumBox, { width: SPECTRUM_SIZE, height: SPECTRUM_SIZE }]}
         onStartShouldSetResponder={() => true}
@@ -421,7 +385,7 @@ function ColorPickerSheet({ visible, selectedColor, onSelect, onCancel }: {
   };
 
   return (
-    <Modal transparent animationType="none" visible={visible} onRequestClose={dismiss}>
+    <Modal transparent animationType="slide" visible={visible} onRequestClose={dismiss}>
       <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={dismiss} />
       <View style={[styles.sheet, { paddingBottom: 36 }]}>
         <View style={styles.handle} />
@@ -429,7 +393,7 @@ function ColorPickerSheet({ visible, selectedColor, onSelect, onCancel }: {
         {!showSpectrum && (
           <View style={styles.iconSheetHeader}>
             <Text style={styles.sheetTitle}>Renk Seç</Text>
-            <TouchableOpacity onPress={onCancel} style={styles.iconSheetClose} activeOpacity={0.7}>
+            <TouchableOpacity onPress={dismiss} style={styles.iconSheetClose} activeOpacity={0.7}>
               <MaterialCommunityIcons name="close" size={18} color={C.muted} />
             </TouchableOpacity>
           </View>
@@ -438,6 +402,7 @@ function ColorPickerSheet({ visible, selectedColor, onSelect, onCancel }: {
         {showSpectrum ? (
           <SpectrumPicker
             onColorChange={(c) => { onSelect(c); }}
+            onBack={() => setShowSpectrum(false)}
           />
         ) : (
           <View style={styles.cpGrid}>
@@ -482,31 +447,36 @@ function ColorPickerSheet({ visible, selectedColor, onSelect, onCancel }: {
 // ANA BİLEŞEN
 // ════════════════════════════════════════════════════════
 export default function CreateScreen() {
-  const [taskName, setTaskName] = useState('Design Competition');
+  const [taskName, setTaskName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState<IconName>('medal');
-  const [selectedColor, setSelectedColor] = useState('#F6EFEA');
-  const [startDate, setStartDate] = useState(new Date(2025, 0, 1));
-  const [endDate, setEndDate] = useState(new Date(2025, 11, 31));
+  const [selectedColor, setSelectedColor] = useState('#FF8A1F');
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
+  const [noEndDate, setNoEndDate] = useState(true);
 
-  const [showDelete, setShowDelete] = useState(false);
   const [showStartCal, setShowStartCal] = useState(false);
   const [showEndCal, setShowEndCal] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
+
+  const handleSave = () => {
+    if (!taskName.trim()) {
+      Alert.alert('Alışkanlık adı gerekli', 'Lütfen bir alışkanlık adı girin.');
+      return;
+    }
+    if (!noEndDate && endDate < startDate) {
+      Alert.alert('Geçersiz tarih', 'Bitiş tarihi başlangıç tarihinden önce olamaz.');
+      return;
+    }
+    Alert.alert('Kaydedildi!', `"${taskName.trim()}" alışkanlığı oluşturuldu.`);
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
 
       {/* ── Başlık ──────────────────────────────────── */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Habit</Text>
-        <TouchableOpacity
-          style={styles.deleteBtn}
-          onPress={() => setShowDelete(true)}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons name="delete-outline" size={20} color={C.red} />
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Alışkanlık Oluştur</Text>
       </View>
 
       <ScrollView
@@ -521,7 +491,7 @@ export default function CreateScreen() {
           <HabitCard
             habit={{
               id: 0,
-              name: taskName || 'Enter habit name...',
+              name: taskName || 'Alışkanlık adı girin...',
               completed: false,
               bgColor: selectedColor,
               icon: selectedIcon,
@@ -532,12 +502,12 @@ export default function CreateScreen() {
         </View>
 
         {/* ── Görev Adı ─────────────────────────────── */}
-        <Text style={styles.sectionLabel}>Task Name</Text>
+        <Text style={styles.sectionLabel}>Alışkanlık Adı</Text>
         <View style={[styles.nameRow, { backgroundColor: '#F6EFEA', paddingHorizontal: 16 }]}>
           <TextInput
             value={taskName}
             onChangeText={setTaskName}
-            placeholder="Enter habit name..."
+            placeholder="Alışkanlık adı girin..."
             placeholderTextColor={C.muted}
             style={styles.nameInput}
           />
@@ -551,7 +521,7 @@ export default function CreateScreen() {
             onPress={() => setShowIconPicker(true)}
             activeOpacity={0.7}
           >
-            <Text style={styles.settingLabel}>Icon</Text>
+            <Text style={styles.settingLabel}>İkon</Text>
             <View style={styles.settingValueBox}>
               <MaterialCommunityIcons name={selectedIcon} size={24} color={C.text} />
             </View>
@@ -562,32 +532,43 @@ export default function CreateScreen() {
             onPress={() => setShowColorPicker(true)}
             activeOpacity={0.7}
           >
-            <Text style={styles.settingLabel}>Color</Text>
-            <View style={[styles.settingValueBox, { backgroundColor: selectedColor }]} />
+            <Text style={styles.settingLabel}>Renk</Text>
+            <View style={[styles.settingValueBox, styles.settingColorBox, { backgroundColor: selectedColor }]} />
           </TouchableOpacity>
 
         </View>
 
         {/* ── Ne Zaman ──────────────────────────────── */}
-        <Text style={styles.sectionLabel}>When</Text>
+        <Text style={styles.sectionLabel}>Ne Zaman</Text>
 
-        <View style={{ flexDirection: 'row', gap: 12 }}>
-          {/* Başlangıç tarihi */}
-          <View style={{ flex: 1 }}>
-            <Text style={styles.dateSubLabel}>Start Date</Text>
-            <TouchableOpacity
-              style={[styles.dateRow, { paddingHorizontal: 12, gap: 6 }]}
-              onPress={() => setShowStartCal(true)}
-              activeOpacity={0.8}
-            >
-              <MaterialCommunityIcons name="calendar-month-outline" size={18} color={C.muted} />
-              <Text style={[styles.dateText, { fontSize: 13 }]} numberOfLines={1}>{formatDate(startDate)}</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Başlangıç tarihi */}
+        <View style={{ marginBottom: 12 }}>
+          <Text style={styles.dateSubLabel}>Başlangıç Tarihi</Text>
+          <TouchableOpacity
+            style={[styles.dateRow, { paddingHorizontal: 12, gap: 6 }]}
+            onPress={() => setShowStartCal(true)}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons name="calendar-month-outline" size={18} color={C.muted} />
+            <Text style={[styles.dateText, { fontSize: 13 }]} numberOfLines={1}>{formatDate(startDate)}</Text>
+          </TouchableOpacity>
+        </View>
 
-          {/* Bitiş tarihi */}
-          <View style={{ flex: 1 }}>
-            <Text style={styles.dateSubLabel}>End Date</Text>
+        {/* Süresiz toggle */}
+        <View style={styles.noEndDateRow}>
+          <Text style={styles.noEndDateLabel}>Süresiz</Text>
+          <Switch
+            value={noEndDate}
+            onValueChange={setNoEndDate}
+            trackColor={{ false: C.border, true: C.orange }}
+            thumbColor="#fff"
+          />
+        </View>
+
+        {/* Bitiş tarihi — sadece süresiz kapalıyken */}
+        {!noEndDate && (
+          <View style={{ marginTop: 12 }}>
+            <Text style={styles.dateSubLabel}>Bitiş Tarihi</Text>
             <TouchableOpacity
               style={[styles.dateRow, { paddingHorizontal: 12, gap: 6 }]}
               onPress={() => setShowEndCal(true)}
@@ -597,30 +578,25 @@ export default function CreateScreen() {
               <Text style={[styles.dateText, { fontSize: 13 }]} numberOfLines={1}>{formatDate(endDate)}</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        )}
 
         <View style={{ height: 32 }} />
       </ScrollView>
 
       {/* ── Kaydet Butonu ─────────────────────────────── */}
       <View style={styles.saveWrap}>
-        <TouchableOpacity activeOpacity={0.85} style={{ borderRadius: 20, overflow: 'hidden' }}>
+        <TouchableOpacity activeOpacity={0.85} style={{ borderRadius: 20, overflow: 'hidden' }} onPress={handleSave}>
           <LinearGradient
             colors={['#FFA94D', '#FF8A1F']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             style={styles.saveBtn}
           >
-            <Text style={styles.saveBtnText}>Save</Text>
+            <Text style={styles.saveBtnText}>Kaydet</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
 
       {/* ── Modaller ──────────────────────────────────── */}
-      <DeleteSheet
-        visible={showDelete}
-        onCancel={() => setShowDelete(false)}
-        onConfirm={() => setShowDelete(false)}
-      />
       <CalendarSheet
         visible={showStartCal}
         selectedDate={startDate}
@@ -658,11 +634,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16,
   },
   headerTitle: { fontSize: 20, fontWeight: '700', color: C.text },
-  deleteBtn: {
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: C.redLight,
-    alignItems: 'center', justifyContent: 'center',
-  },
 
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingTop: 24 },
@@ -677,12 +648,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 10,
     borderRadius: 14, padding: 10,
     marginBottom: 28,
-  },
-  emojiBtn: {
-    width: 46, height: 46, borderRadius: 12,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-    alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0,
   },
   nameInput: {
     flex: 1, fontSize: 15, color: C.text,
@@ -717,6 +682,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  settingColorBox: {
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+  },
+
+  // Süresiz satırı
+  noEndDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F6EFEA',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  noEndDateLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: C.text,
+  },
 
   // Renk seçici modal grid
   cpGrid: {
@@ -735,6 +720,20 @@ const styles = StyleSheet.create({
   // Spektrum
   spectrumWrap: {
     alignItems: 'center', paddingHorizontal: 20, paddingBottom: 16,
+  },
+  spectrumBackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    marginBottom: 8,
+  },
+  spectrumBackText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: C.text,
   },
   spectrumBox: {
     borderRadius: 16, overflow: 'hidden',
@@ -783,16 +782,6 @@ const styles = StyleSheet.create({
     width: 40, height: 4, borderRadius: 100,
     backgroundColor: C.handle, alignSelf: 'center', marginTop: 12, marginBottom: 4,
   },
-
-  // Silme sheet
-  deleteIconWrap: {
-    width: 52, height: 52, borderRadius: 26,
-    backgroundColor: C.redLight,
-    alignItems: 'center', justifyContent: 'center',
-    alignSelf: 'center', marginTop: 16,
-  },
-  deleteTitle: { fontSize: 18, fontWeight: '700', color: C.text, textAlign: 'center', marginTop: 12 },
-  deleteSubtitle: { fontSize: 14, color: C.muted, textAlign: 'center', marginTop: 8, marginHorizontal: 24, marginBottom: 24 },
 
   sheetBtnRow: { flexDirection: 'row', gap: 12 },
   cancelBtn: {
