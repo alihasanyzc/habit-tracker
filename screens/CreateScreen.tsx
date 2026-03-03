@@ -60,6 +60,17 @@ const MONTH_NAMES = [
 ];
 const DAY_LABELS = ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'];
 
+// ── Seçilen rengi pastel arka plana dönüştür (HomeScreen pattern) ──
+function lightenColor(hex: string, mix = 0.82): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const nr = Math.round(r + (255 - r) * mix);
+  const ng = Math.round(g + (255 - g) * mix);
+  const nb = Math.round(b + (255 - b) * mix);
+  return `#${nr.toString(16).padStart(2, '0')}${ng.toString(16).padStart(2, '0')}${nb.toString(16).padStart(2, '0')}`;
+}
+
 // ── Tarih formatlama ────────────────────────────────────
 function formatDate(d: Date) {
   return `${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
@@ -452,7 +463,7 @@ export default function CreateScreen() {
   const [selectedColor, setSelectedColor] = useState('#FF8A1F');
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
-  const [noEndDate, setNoEndDate] = useState(true);
+  const [noEndDate, setNoEndDate] = useState(false);
 
   const [showStartCal, setShowStartCal] = useState(false);
   const [showEndCal, setShowEndCal] = useState(false);
@@ -476,7 +487,10 @@ export default function CreateScreen() {
 
       {/* ── Başlık ──────────────────────────────────── */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Alışkanlık Oluştur</Text>
+        <View>
+          <Text style={styles.headerTitle}>Alışkanlık Ekle</Text>
+          <Text style={styles.headerSub}>Yeni bir alışkanlık ekle</Text>
+        </View>
       </View>
 
       <ScrollView
@@ -487,15 +501,16 @@ export default function CreateScreen() {
       >
 
         {/* ── Önizleme (Preview) ────────────────────── */}
+        <Text style={styles.sectionLabel}>Önizleme</Text>
         <View style={{ marginHorizontal: -20, marginBottom: 28 }}>
           <HabitCard
             habit={{
               id: 0,
               name: taskName || 'Alışkanlık adı girin...',
               completed: false,
-              bgColor: selectedColor,
+              bgColor: lightenColor(selectedColor),
               icon: selectedIcon,
-              iconColor: C.text
+              iconColor: selectedColor
             }}
             onToggle={() => { }}
           />
@@ -503,7 +518,7 @@ export default function CreateScreen() {
 
         {/* ── Görev Adı ─────────────────────────────── */}
         <Text style={styles.sectionLabel}>Alışkanlık Adı</Text>
-        <View style={[styles.nameRow, { backgroundColor: '#F6EFEA', paddingHorizontal: 16 }]}>
+        <View style={styles.card}>
           <TextInput
             value={taskName}
             onChangeText={setTaskName}
@@ -513,88 +528,118 @@ export default function CreateScreen() {
           />
         </View>
 
-        {/* ── İkon ve Renk Seçici ────────────────────── */}
-        <View style={styles.settingsRow}>
-
+        {/* ── Görünüm (İkon & Renk) ─────────────────── */}
+        <Text style={styles.sectionLabel}>Görünüm</Text>
+        <View style={styles.card}>
           <TouchableOpacity
-            style={styles.settingItem}
+            style={styles.cardRow}
             onPress={() => setShowIconPicker(true)}
             activeOpacity={0.7}
           >
-            <Text style={styles.settingLabel}>İkon</Text>
-            <View style={styles.settingValueBox}>
-              <MaterialCommunityIcons name={selectedIcon} size={24} color={C.text} />
+            <View style={styles.cardRowLeft}>
+              <View style={styles.rowIconWrap}>
+                <MaterialCommunityIcons name="emoticon-outline" size={18} color={C.orange} />
+              </View>
+              <Text style={styles.cardRowLabel}>İkon</Text>
+            </View>
+            <View style={styles.cardRowRight}>
+              <MaterialCommunityIcons name={selectedIcon} size={22} color={C.text} />
+              <MaterialCommunityIcons name="chevron-right" size={20} color={C.muted} />
             </View>
           </TouchableOpacity>
 
+          <View style={styles.cardDivider} />
+
           <TouchableOpacity
-            style={styles.settingItem}
+            style={styles.cardRow}
             onPress={() => setShowColorPicker(true)}
             activeOpacity={0.7}
           >
-            <Text style={styles.settingLabel}>Renk</Text>
-            <View style={[styles.settingValueBox, styles.settingColorBox, { backgroundColor: selectedColor }]} />
+            <View style={styles.cardRowLeft}>
+              <View style={styles.rowIconWrap}>
+                <MaterialCommunityIcons name="palette-outline" size={18} color={C.orange} />
+              </View>
+              <Text style={styles.cardRowLabel}>Renk</Text>
+            </View>
+            <View style={styles.cardRowRight}>
+              <View style={[styles.colorDot, { backgroundColor: selectedColor }]} />
+              <MaterialCommunityIcons name="chevron-right" size={20} color={C.muted} />
+            </View>
           </TouchableOpacity>
-
         </View>
 
         {/* ── Ne Zaman ──────────────────────────────── */}
-        <Text style={styles.sectionLabel}>Ne Zaman</Text>
+        <View style={styles.sectionLabelRow}>
+          <Text style={styles.sectionLabel}>Ne Zaman</Text>
+          <View style={styles.noEndDateInline}>
+            <Text style={[styles.noEndDateText, noEndDate && { color: C.orange }]}>Süresiz</Text>
+            <Switch
+              value={noEndDate}
+              onValueChange={setNoEndDate}
+              trackColor={{ false: C.border, true: C.orange }}
+              thumbColor="#fff"
+              style={{ transform: [{ scaleX: 0.75 }, { scaleY: 0.75 }] }}
+            />
+          </View>
+        </View>
+        <View style={styles.card}>
 
-        {/* Başlangıç tarihi */}
-        <View style={{ marginBottom: 12 }}>
-          <Text style={styles.dateSubLabel}>Başlangıç Tarihi</Text>
+          {/* Başlangıç tarihi */}
           <TouchableOpacity
-            style={[styles.dateRow, { paddingHorizontal: 12, gap: 6 }]}
+            style={styles.cardRow}
             onPress={() => setShowStartCal(true)}
             activeOpacity={0.8}
           >
-            <MaterialCommunityIcons name="calendar-month-outline" size={18} color={C.muted} />
-            <Text style={[styles.dateText, { fontSize: 13 }]} numberOfLines={1}>{formatDate(startDate)}</Text>
+            <View style={styles.cardRowLeft}>
+              <View style={styles.rowIconWrap}>
+                <MaterialCommunityIcons name="calendar-start-outline" size={18} color={C.orange} />
+              </View>
+              <Text style={styles.cardRowLabel}>Başlangıç</Text>
+            </View>
+            <View style={styles.cardRowRight}>
+              <Text style={styles.cardRowValue}>{formatDate(startDate)}</Text>
+              <MaterialCommunityIcons name="chevron-right" size={20} color={C.muted} />
+            </View>
+          </TouchableOpacity>
+
+          {/* Bitiş tarihi — sadece süresiz kapalıyken */}
+          {!noEndDate && (
+            <>
+              <View style={styles.cardDivider} />
+              <TouchableOpacity
+                style={styles.cardRow}
+                onPress={() => setShowEndCal(true)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.cardRowLeft}>
+                  <View style={styles.rowIconWrap}>
+                    <MaterialCommunityIcons name="calendar-end-outline" size={18} color={C.red} />
+                  </View>
+                  <Text style={styles.cardRowLabel}>Bitiş</Text>
+                </View>
+                <View style={styles.cardRowRight}>
+                  <Text style={styles.cardRowValue}>{formatDate(endDate)}</Text>
+                  <MaterialCommunityIcons name="chevron-right" size={20} color={C.muted} />
+                </View>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+
+        {/* ── Kaydet Butonu ─────────────────────────────── */}
+        <View style={styles.saveWrap}>
+          <TouchableOpacity activeOpacity={0.85} style={{ borderRadius: 16, overflow: 'hidden' }} onPress={handleSave}>
+            <LinearGradient
+              colors={['#FFA94D', '#FF8A1F']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={styles.saveBtn}
+            >
+              <Text style={styles.saveBtnText}>Kaydet</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
 
-        {/* Süresiz toggle */}
-        <View style={styles.noEndDateRow}>
-          <Text style={styles.noEndDateLabel}>Süresiz</Text>
-          <Switch
-            value={noEndDate}
-            onValueChange={setNoEndDate}
-            trackColor={{ false: C.border, true: C.orange }}
-            thumbColor="#fff"
-          />
-        </View>
-
-        {/* Bitiş tarihi — sadece süresiz kapalıyken */}
-        {!noEndDate && (
-          <View style={{ marginTop: 12 }}>
-            <Text style={styles.dateSubLabel}>Bitiş Tarihi</Text>
-            <TouchableOpacity
-              style={[styles.dateRow, { paddingHorizontal: 12, gap: 6 }]}
-              onPress={() => setShowEndCal(true)}
-              activeOpacity={0.8}
-            >
-              <MaterialCommunityIcons name="calendar-month-outline" size={18} color={C.muted} />
-              <Text style={[styles.dateText, { fontSize: 13 }]} numberOfLines={1}>{formatDate(endDate)}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        <View style={{ height: 32 }} />
       </ScrollView>
-
-      {/* ── Kaydet Butonu ─────────────────────────────── */}
-      <View style={styles.saveWrap}>
-        <TouchableOpacity activeOpacity={0.85} style={{ borderRadius: 20, overflow: 'hidden' }} onPress={handleSave}>
-          <LinearGradient
-            colors={['#FFA94D', '#FF8A1F']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-            style={styles.saveBtn}
-          >
-            <Text style={styles.saveBtnText}>Kaydet</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
 
       {/* ── Modaller ──────────────────────────────────── */}
       <CalendarSheet
@@ -634,73 +679,103 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16,
   },
   headerTitle: { fontSize: 24, fontWeight: '700', color: C.text, lineHeight: 30 },
+  headerSub: { fontSize: 13, color: C.muted, marginTop: 3 },
 
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingTop: 24 },
 
   sectionLabel: {
-    fontSize: 16, fontWeight: '700', color: C.text,
-    marginBottom: 12,
+    fontSize: 12,
+    fontWeight: '700',
+    color: C.muted,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 10,
+    marginLeft: 4,
   },
 
-  // Görev adı
-  nameRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    borderRadius: 14, padding: 10,
-    marginBottom: 28,
-  },
-  nameInput: {
-    flex: 1, fontSize: 15, color: C.text,
-    paddingVertical: 4,
-  },
-
-  // Ayarlar Row (Icon & Color)
-  settingsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 28,
-  },
-  settingItem: {
-    flex: 1,
+  sectionLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F6EFEA',
-    borderRadius: 14,
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  noEndDateInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  noEndDateText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: C.muted,
+  },
+
+  // Kart container
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    marginBottom: 28,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 },
+      android: { elevation: 3 },
+    }),
+  },
+
+  // Kart satırı
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
+    justifyContent: 'space-between',
   },
-  settingLabel: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: C.text,
+  cardRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  settingValueBox: {
+  cardRowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  rowIconWrap: {
     width: 32,
     height: 32,
     borderRadius: 8,
+    backgroundColor: '#FFF4E8',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  settingColorBox: {
+  cardRowLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: C.text,
+  },
+  cardRowValue: {
+    fontSize: 14,
+    color: C.muted,
+  },
+  cardDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: C.border,
+    marginLeft: 60,
+  },
+  colorDot: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.1)',
   },
 
-  // Süresiz satırı
-  noEndDateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#F6EFEA',
-    borderRadius: 14,
+  // Görev adı input
+  nameInput: {
+    fontSize: 15, color: C.text,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  noEndDateLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: C.text,
+    paddingVertical: 14,
   },
 
   // Renk seçici modal grid
@@ -748,19 +823,10 @@ const styles = StyleSheet.create({
     }),
   },
 
-  // Tarih satırı
-  dateSubLabel: { fontSize: 12, fontWeight: '600', color: C.muted, marginBottom: 6, marginLeft: 4 },
-  dateRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    borderRadius: 14, paddingHorizontal: 18, paddingVertical: 14,
-    backgroundColor: '#F6EFEA',
-  },
-  dateText: { flex: 1, fontSize: 15, color: C.text },
-
   // Kaydet
-  saveWrap: { paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 44 : 32, paddingTop: 8 },
-  saveBtn: { borderRadius: 20, paddingVertical: 18, alignItems: 'center' },
-  saveBtnText: { fontSize: 17, fontWeight: '700', color: '#fff', letterSpacing: 0.3 },
+  saveWrap: { paddingHorizontal: 40, paddingBottom: 32, paddingTop: 8 },
+  saveBtn: { borderRadius: 16, paddingVertical: 14, alignItems: 'center' },
+  saveBtnText: { fontSize: 16, fontWeight: '700', color: '#fff', letterSpacing: 0.3 },
 
   // Ortak overlay
   overlay: {
