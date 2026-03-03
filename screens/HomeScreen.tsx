@@ -36,7 +36,7 @@ const WEEK_DAYS = [
 ];
 
 // ── Habit listesi ──────────────────────────────────────
-interface Habit {
+export interface Habit {
   id: number;
   name: string;
   completed: boolean;
@@ -114,7 +114,7 @@ function CircleDay({
 const SWIPE_THRESHOLD = 80;
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
-function HabitCard({
+export function HabitCard({
   habit,
   onToggle,
 }: {

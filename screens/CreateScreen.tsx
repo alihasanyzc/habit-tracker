@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { HabitCard } from './HomeScreen';
 
 // ── Renk Paleti ────────────────────────────────────────
 const C = {
@@ -515,16 +516,24 @@ export default function CreateScreen() {
         keyboardShouldPersistTaps="handled"
       >
 
+        {/* ── Önizleme (Preview) ────────────────────── */}
+        <View style={{ marginHorizontal: -20, marginBottom: 28 }}>
+          <HabitCard
+            habit={{
+              id: 0,
+              name: taskName || 'Enter habit name...',
+              completed: false,
+              bgColor: selectedColor,
+              icon: selectedIcon,
+              iconColor: C.text
+            }}
+            onToggle={() => { }}
+          />
+        </View>
+
         {/* ── Görev Adı ─────────────────────────────── */}
         <Text style={styles.sectionLabel}>Task Name</Text>
-        <View style={[styles.nameRow, { backgroundColor: selectedColor }]}>
-          <TouchableOpacity
-            style={styles.emojiBtn}
-            onPress={() => setShowIconPicker(true)}
-            activeOpacity={0.75}
-          >
-            <MaterialCommunityIcons name={selectedIcon} size={26} color={C.text} />
-          </TouchableOpacity>
+        <View style={[styles.nameRow, { backgroundColor: '#F6EFEA', paddingHorizontal: 16 }]}>
           <TextInput
             value={taskName}
             onChangeText={setTaskName}
@@ -534,43 +543,61 @@ export default function CreateScreen() {
           />
         </View>
 
-        {/* ── Renk Seçici (satır, tıkla → modal) ──── */}
-        <TouchableOpacity
-          style={styles.colorRow}
-          onPress={() => setShowColorPicker(true)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.colorRowLabel}>Color</Text>
-          <View style={[styles.colorPreview, { backgroundColor: selectedColor }]} />
-          <Text style={styles.colorRowChevron}>›</Text>
-        </TouchableOpacity>
+        {/* ── İkon ve Renk Seçici ────────────────────── */}
+        <View style={styles.settingsRow}>
+
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => setShowIconPicker(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.settingLabel}>Icon</Text>
+            <View style={styles.settingValueBox}>
+              <MaterialCommunityIcons name={selectedIcon} size={24} color={C.text} />
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.settingItem}
+            onPress={() => setShowColorPicker(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.settingLabel}>Color</Text>
+            <View style={[styles.settingValueBox, { backgroundColor: selectedColor }]} />
+          </TouchableOpacity>
+
+        </View>
 
         {/* ── Ne Zaman ──────────────────────────────── */}
         <Text style={styles.sectionLabel}>When</Text>
 
-        {/* Başlangıç tarihi */}
-        <Text style={styles.dateSubLabel}>Start Date</Text>
-        <TouchableOpacity
-          style={styles.dateRow}
-          onPress={() => setShowStartCal(true)}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons name="calendar-month-outline" size={20} color={C.muted} />
-          <Text style={styles.dateText}>{formatDate(startDate)}</Text>
-          <MaterialCommunityIcons name="pencil-outline" size={18} color={C.muted} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          {/* Başlangıç tarihi */}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.dateSubLabel}>Start Date</Text>
+            <TouchableOpacity
+              style={[styles.dateRow, { paddingHorizontal: 12, gap: 6 }]}
+              onPress={() => setShowStartCal(true)}
+              activeOpacity={0.8}
+            >
+              <MaterialCommunityIcons name="calendar-month-outline" size={18} color={C.muted} />
+              <Text style={[styles.dateText, { fontSize: 13 }]} numberOfLines={1}>{formatDate(startDate)}</Text>
+            </TouchableOpacity>
+          </View>
 
-        {/* Bitiş tarihi */}
-        <Text style={[styles.dateSubLabel, { marginTop: 12 }]}>End Date</Text>
-        <TouchableOpacity
-          style={styles.dateRow}
-          onPress={() => setShowEndCal(true)}
-          activeOpacity={0.8}
-        >
-          <MaterialCommunityIcons name="calendar-month-outline" size={20} color={C.muted} />
-          <Text style={styles.dateText}>{formatDate(endDate)}</Text>
-          <MaterialCommunityIcons name="pencil-outline" size={18} color={C.muted} />
-        </TouchableOpacity>
+          {/* Bitiş tarihi */}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.dateSubLabel}>End Date</Text>
+            <TouchableOpacity
+              style={[styles.dateRow, { paddingHorizontal: 12, gap: 6 }]}
+              onPress={() => setShowEndCal(true)}
+              activeOpacity={0.8}
+            >
+              <MaterialCommunityIcons name="calendar-month-outline" size={18} color={C.muted} />
+              <Text style={[styles.dateText, { fontSize: 13 }]} numberOfLines={1}>{formatDate(endDate)}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         <View style={{ height: 32 }} />
       </ScrollView>
@@ -638,7 +665,7 @@ const styles = StyleSheet.create({
   },
 
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 24 },
 
   sectionLabel: {
     fontSize: 16, fontWeight: '700', color: C.text,
@@ -662,19 +689,34 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
 
-  // Renk satırı (Color row)
-  colorRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 16, paddingHorizontal: 4,
-    borderTopWidth: 1, borderBottomWidth: 1,
-    borderColor: C.border,
+  // Ayarlar Row (Icon & Color)
+  settingsRow: {
+    flexDirection: 'row',
+    gap: 12,
     marginBottom: 28,
   },
-  colorRowLabel: { flex: 1, fontSize: 16, fontWeight: '700', color: C.text },
-  colorPreview: {
-    width: 48, height: 30, borderRadius: 15,
+  settingItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F6EFEA',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
-  colorRowChevron: { fontSize: 22, color: '#BBBBBB', marginLeft: 10 },
+  settingLabel: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    color: C.text,
+  },
+  settingValueBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   // Renk seçici modal grid
   cpGrid: {
@@ -717,7 +759,7 @@ const styles = StyleSheet.create({
   dateText: { flex: 1, fontSize: 15, color: C.text },
 
   // Kaydet
-  saveWrap: { paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 24 : 16, paddingTop: 8 },
+  saveWrap: { paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 44 : 32, paddingTop: 8 },
   saveBtn: { borderRadius: 20, paddingVertical: 18, alignItems: 'center' },
   saveBtnText: { fontSize: 17, fontWeight: '700', color: '#fff', letterSpacing: 0.3 },
 
