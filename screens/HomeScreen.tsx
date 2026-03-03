@@ -10,7 +10,7 @@ import {
   Platform,
   Easing,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -268,6 +268,7 @@ function AnimatedTimeIcon({ icon, type }: { icon: string, type: string }) {
 export default function HomeScreen() {
   const [habits, setHabits] = useState<Habit[]>(INITIAL_HABITS);
   const [selectedDate, setSelectedDate] = useState(10);
+  const insets = useSafeAreaInsets();
   const toggleHabit = (id: number) => {
     setHabits(prev => prev.map(h => h.id === id ? { ...h, completed: !h.completed } : h));
   };
@@ -284,33 +285,36 @@ export default function HomeScreen() {
   const timeOfDay = getTimeOfDay();
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* ── Başlık ──────────────────────────────── */}
+    <View style={styles.safe}>
+      <View style={{ height: insets.top, backgroundColor: C.bg }} />
+      {/* ── Başlık + Haftalık Takvim ─────────────── */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>{timeOfDay.greeting}, Budi</Text>
-          <Text style={styles.dateText}>Salı, 10 Mart, 2025</Text>
-        </View>
-        <View style={styles.headerRight}>
-          <View style={[styles.avatar, { backgroundColor: timeOfDay.bg }]}>
-            <AnimatedTimeIcon icon={timeOfDay.icon} type={timeOfDay.type} />
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.greeting}>{timeOfDay.greeting}, Budi</Text>
+            <Text style={styles.dateText}>Salı, 10 Mart, 2025</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <View style={[styles.avatar, { backgroundColor: timeOfDay.bg }]}>
+              <AnimatedTimeIcon icon={timeOfDay.icon} type={timeOfDay.type} />
+            </View>
           </View>
         </View>
-      </View>
 
-      {/* ── Haftalık Takvim ─────────────────────── */}
-      <View style={styles.weekRow}>
-        {weekDays.map(d => (
-          <CircleDay
-            key={d.date}
-            day={d.day}
-            date={d.date}
-            pct={d.pct}
-            isSelected={d.date === selectedDate}
-            isToday={d.isToday}
-            onPress={() => setSelectedDate(d.date)}
-          />
-        ))}
+        {/* ── Haftalık Takvim ─────────────────────── */}
+        <View style={styles.weekRow}>
+          {weekDays.map(d => (
+            <CircleDay
+              key={d.date}
+              day={d.day}
+              date={d.date}
+              pct={d.pct}
+              isSelected={d.date === selectedDate}
+              isToday={d.isToday}
+              onPress={() => setSelectedDate(d.date)}
+            />
+          ))}
+        </View>
       </View>
 
       <ScrollView
@@ -318,11 +322,9 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Daily Routine ────────────────────────── */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Günlük Rutinlerim</Text>
+          <Text style={styles.sectionTitle}>Alışkanlıklarım</Text>
         </View>
-
         {/* Aktif alışkanlıklar */}
         {active.map(h => (
           <HabitCard key={h.id} habit={h} onToggle={toggleHabit} />
@@ -340,25 +342,28 @@ export default function HomeScreen() {
 
         <View style={{ height: 20 }} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
-
 }
 
 // ── Stiller ────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: C.bg },
-  scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 16 },
+  safe: { flex: 1, backgroundColor: '#fff' },
+  scroll: { flex: 1, backgroundColor: C.bg },
+  scrollContent: { paddingTop: 12, paddingBottom: 16 },
 
   // Header
   header: {
+    backgroundColor: C.bg,
+    paddingBottom: 4,
+  },
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
+    paddingTop: 14,
+    paddingBottom: 4,
   },
   greeting: { fontSize: 24, fontWeight: '700', color: C.text, lineHeight: 30 },
   dateText: { fontSize: 13, color: C.muted, marginTop: 3 },
@@ -389,9 +394,9 @@ const styles = StyleSheet.create({
   // Bölüm başlığı
   sectionHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8,
+    paddingHorizontal: 20, paddingTop: 6, paddingBottom: 8, backgroundColor: C.bg,
   },
-  sectionTitle: { fontSize: 20, fontWeight: '700', color: C.text },
+  sectionTitle: { fontSize: 13, fontWeight: '500', color: C.muted },
 
   // Kart
   cardWrap: { paddingHorizontal: 16, marginBottom: 7, position: 'relative' },

@@ -13,7 +13,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 const Tab = createBottomTabNavigator();
 
 // ── Renk Paleti ──────────────────────────────────────
-const NAV_BG = '#EFE5DD';
+const NAV_BG = '#FFFFFF';
 const ACTIVE = '#FF8A1F';
 const INACTIVE = '#7A7A7A';
 
@@ -82,7 +82,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 // ── Navigator ────────────────────────────────────────
 export default function AppNavigator() {
   return (
-    <View style={{ flex: 1, backgroundColor: '#F6EFEA' }}>
+    <View style={{ flex: 1, backgroundColor: '#F6EFEA', overflow: 'hidden' }}>
       <NavigationContainer>
         <Tab.Navigator
           tabBar={props => <CustomTabBar {...props} />}
@@ -104,14 +104,15 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     backgroundColor: NAV_BG,
-    paddingBottom: Platform.OS === 'ios' ? 22 : 12,
+    paddingBottom: Platform.OS === 'ios' ? 16 : 10,
     paddingTop: 10,
     paddingHorizontal: 4,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderRadius: 30,
+    marginHorizontal: 16,
+    marginBottom: Platform.OS === 'ios' ? 28 : 14,
     overflow: 'visible',
     ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.08, shadowRadius: 12 },
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 16 },
       android: { elevation: 12 },
     }),
   },
@@ -141,11 +142,7 @@ const styles = StyleSheet.create({
   },
   centerBtnActive: { backgroundColor: '#E06B00' },
 
-  // Home indicator
   homeIndicator: {
-    position: 'absolute', bottom: 6, left: '50%',
-    marginLeft: -60,
-    width: 120, height: 4, borderRadius: 2,
-    backgroundColor: 'rgba(163,84,20,0.18)',
+    display: 'none',
   },
 });
