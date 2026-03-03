@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Modal, Dimensions, Platform, Animated,
+  Modal, Dimensions, Platform, Animated, Easing,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -9,6 +9,7 @@ import Svg, {
   Rect, Path, Circle, Defs, LinearGradient as SvgGradient,
   Stop, G, Text as SvgText, Polygon,
 } from 'react-native-svg';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 // ── Renk Paleti ────────────────────────────────────────
 const C = {
@@ -120,6 +121,79 @@ function buildBezierPath(
   return { linePath: line, areaPath: area };
 }
 
+// ── Saate göre selamlama & ikon ───────────────────────
+function getTimeOfDay() {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return { greeting: 'Günaydın', icon: 'weather-sunny', bg: '#FF8A1F', type: 'day' };
+  if (hour >= 12 && hour < 17) return { greeting: 'İyi Günler', icon: 'white-balance-sunny', bg: '#F5A623', type: 'day' };
+  if (hour >= 17 && hour < 21) return { greeting: 'İyi Akşamlar', icon: 'weather-sunset', bg: '#E06B00', type: 'night' };
+  return { greeting: 'İyi Geceler', icon: 'weather-night', bg: '#3D5A99', type: 'night' };
+}
+
+// ── AnimatedTimeIcon ──────────────────────────────────
+function AnimatedTimeIcon({ icon, type }: { icon: string; type: string }) {
+  const animValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (type === 'day') {
+      Animated.loop(
+        Animated.timing(animValue, {
+          toValue: 1,
+          duration: 10000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(animValue, {
+            toValue: 1,
+            duration: 2500,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(animValue, {
+            toValue: 0,
+            duration: 2500,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [type, animValue]);
+
+  const animatedStyle =
+    type === 'day'
+      ? {
+        transform: [
+          {
+            rotate: animValue.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['0deg', '360deg'],
+            }),
+          },
+        ],
+      }
+      : {
+        transform: [
+          {
+            scale: animValue.interpolate({
+              inputRange: [0, 1],
+              outputRange: [1, 1.15],
+            }),
+          },
+        ],
+      };
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <MaterialCommunityIcons name={icon as any} size={26} color="#fff" />
+    </Animated.View>
+  );
+}
+
 // ════════════════════════════════════════════════════════
 // DROPDOWN BİLEŞENİ
 // ════════════════════════════════════════════════════════
@@ -167,7 +241,7 @@ function Dropdown({ options, value, onChange }: {
 }
 
 // ════════════════════════════════════════════════════════
-// BAR CHART
+// ÇUBUK GRAFİK
 // ════════════════════════════════════════════════════════
 const BAR_H = 200;
 const Y_AXIS_W = 28;
@@ -184,7 +258,7 @@ function BarChartSvg({ config, activeIdx, onBarPress, progress = 1 }: {
   progress?: number;
 }) {
   const N = config.items.length;
-  // Calculate dynamic width based on item count to allow horizontal scrolling
+  // Yatay kaydırma için öğe sayısına göre dinamik genişlik hesapla
   const SVG_W = Math.max(CHART_INNER, Y_AXIS_W + N * 45 + 16);
   const PLOT_W = SVG_W - Y_AXIS_W - 16;
   const GAP = PLOT_W / (N * 1.6);
@@ -272,7 +346,7 @@ function BarChartSvg({ config, activeIdx, onBarPress, progress = 1 }: {
 }
 
 // ════════════════════════════════════════════════════════
-// AREA CHART
+// ALAN GRAFİK
 // ════════════════════════════════════════════════════════
 const LINE_H = 200;
 const LY_AXIS_W = 32;
@@ -286,7 +360,7 @@ function AreaChartSvg({ config, activeIdx, onDotPress }: {
   onDotPress: (i: number) => void;
 }) {
   const N = config.items.length;
-  // Calculate dynamic width based on item count to fix right empty space and allow proper scrolling
+  // Sağ boşluğu gidermek ve kaydırmayı düzgün sağlamak için dinamik genişlik hesapla
   const SVG_W = Math.max(CHART_INNER, LY_AXIS_W + (N - 1) * 55 + 32);
   const LPLOT_W = SVG_W - LY_AXIS_W - 32;
   const step = LPLOT_W / Math.max(N - 1, 1);
@@ -376,6 +450,7 @@ function AreaChartSvg({ config, activeIdx, onDotPress }: {
 // ANA BİLEŞEN
 // ════════════════════════════════════════════════════════
 export default function ReportScreen() {
+  const timeOfDay = getTimeOfDay();
   const [barPeriod, setBarPeriod] = useState('Bu Hafta');
   const [linePeriod, setLinePeriod] = useState('Son 6 Ay');
   const [activeBarIdx, setActiveBarIdx] = useState(BAR_DATA['Bu Hafta'].defaultIdx);
@@ -403,7 +478,7 @@ export default function ReportScreen() {
   );
 
   const handleBarPeriod = (v: string) => {
-    // Animate out
+    // Animasyonu sıfırla
     Animated.sequence([
       Animated.timing(barScaleAnim, { toValue: 0.95, duration: 100, useNativeDriver: true }),
       Animated.timing(barScaleAnim, { toValue: 1, duration: 250, useNativeDriver: true })
@@ -413,7 +488,7 @@ export default function ReportScreen() {
   };
 
   const handleLinePeriod = (v: string) => {
-    // Animate out
+    // Animasyonu sıfırla
     Animated.sequence([
       Animated.timing(lineScaleAnim, { toValue: 0.95, duration: 100, useNativeDriver: true }),
       Animated.timing(lineScaleAnim, { toValue: 1, duration: 250, useNativeDriver: true })
@@ -427,6 +502,19 @@ export default function ReportScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+
+      {/* ── Başlık ──────────────────────────────── */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greeting}>Raporlar</Text>
+          <Text style={styles.dateText}>{timeOfDay.greeting}, Budi 👋</Text>
+        </View>
+        <View style={styles.headerRight}>
+          <View style={[styles.avatar, { backgroundColor: timeOfDay.bg }]}>
+            <AnimatedTimeIcon icon={timeOfDay.icon} type={timeOfDay.type} />
+          </View>
+        </View>
+      </View>
 
       <ScrollView
         style={styles.scroll}
@@ -510,21 +598,33 @@ export default function ReportScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16,
-  },
-  logoBox: {
-    width: 36, height: 36, borderRadius: 10,
-    backgroundColor: C.orangeBg,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: C.text },
-  moreBtn: { padding: 4 },
-  moreDots: { fontSize: 16, color: C.muted, letterSpacing: 2 },
-
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16 },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 8 },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 4,
+  },
+  greeting: { fontSize: 24, fontWeight: '700', color: C.text, lineHeight: 30 },
+  dateText: { fontSize: 13, color: C.muted, marginTop: 3 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: C.orange,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6 },
+      android: { elevation: 3 },
+    }),
+  },
 
   // Özet kartlar
   statGrid: {
