@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16,
   },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: C.text },
+  headerTitle: { fontSize: 24, fontWeight: '700', color: C.text, lineHeight: 30 },
 
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingTop: 24 },

@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 4,
+    paddingBottom: 16,
   },
   greeting: { fontSize: 24, fontWeight: '700', color: C.text, lineHeight: 30 },
   dateText: { fontSize: 13, color: C.muted, marginTop: 3 },

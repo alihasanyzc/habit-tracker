@@ -408,7 +408,7 @@ export default function StatsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
 
-  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 },
+  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 },
   headerTitle: { fontSize: 24, fontWeight: '700', color: C.text, lineHeight: 30 },
   headerSub: { fontSize: 13, color: C.muted, marginTop: 3 },
 
