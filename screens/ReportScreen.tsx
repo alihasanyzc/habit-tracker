@@ -507,12 +507,6 @@ export default function ReportScreen() {
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>Raporlar</Text>
-          <Text style={styles.dateText}>{timeOfDay.greeting}, Budi 👋</Text>
-        </View>
-        <View style={styles.headerRight}>
-          <View style={[styles.avatar, { backgroundColor: timeOfDay.bg }]}>
-            <AnimatedTimeIcon icon={timeOfDay.icon} type={timeOfDay.type} />
-          </View>
         </View>
       </View>
 
@@ -599,7 +593,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
 
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 8 },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 4 },
 
   // Header
   header: {
@@ -608,7 +602,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 4,
+    paddingBottom: 16,
   },
   greeting: { fontSize: 24, fontWeight: '700', color: C.text, lineHeight: 30 },
   dateText: { fontSize: 13, color: C.muted, marginTop: 3 },
@@ -629,19 +623,19 @@ const styles = StyleSheet.create({
   // Özet kartlar
   statGrid: {
     flexDirection: 'row', flexWrap: 'wrap',
-    gap: 12, marginBottom: 16,
+    gap: 8, marginBottom: 14,
   },
   statCard: {
-    width: (W - 44) / 2,
-    borderRadius: 16, padding: 16,
+    width: (W - 40) / 2,
+    borderRadius: 14, padding: 12,
     borderWidth: 1, borderColor: C.border,
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 },
       android: { elevation: 2 },
     }),
   },
-  statValue: { fontSize: 22, fontWeight: '800', lineHeight: 28 },
-  statLabel: { fontSize: 12, color: C.muted, marginTop: 4 },
+  statValue: { fontSize: 18, fontWeight: '800', lineHeight: 24 },
+  statLabel: { fontSize: 11, color: C.muted, marginTop: 2 },
 
   // Grafik kartı
   chartCard: {

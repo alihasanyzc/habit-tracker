@@ -26,14 +26,14 @@ const C = {
 
 // ── Menü Öğeleri ───────────────────────────────────────
 const MENU_ITEMS = [
-  { icon: 'settings', label: 'Preferences', accent: C.orange },
-  { icon: 'user', label: 'Personal Info', accent: C.green },
-  { icon: 'credit-card', label: 'Payment Methods', accent: C.brown },
-  { icon: 'star', label: 'Billing & Subscriptions', accent: C.pink },
-  { icon: 'shield', label: 'Account & Security', accent: C.orange },
-  { icon: 'link', label: 'Linked Accounts', accent: C.green },
-  { icon: 'eye', label: 'App Appearance', accent: C.brown },
-  { icon: 'bar-chart-2', label: 'Data & Analytics', accent: C.pink },
+  { icon: 'settings', label: 'Tercihler', accent: C.orange },
+  { icon: 'user', label: 'Kişisel Bilgiler', accent: C.green },
+  { icon: 'credit-card', label: 'Ödeme Yöntemleri', accent: C.brown },
+  { icon: 'star', label: 'Faturalandırma ve Abonelik', accent: C.pink },
+  { icon: 'shield', label: 'Hesap ve Güvenlik', accent: C.orange },
+  { icon: 'link', label: 'Bağlı Hesaplar', accent: C.green },
+  { icon: 'eye', label: 'Uygulama Görünümü', accent: C.brown },
+  { icon: 'bar-chart-2', label: 'Veri ve İstatistikler', accent: C.pink },
 ];
 
 // ── Yüz Avatar (SVG) ───────────────────────────────────
@@ -56,7 +56,7 @@ function FaceAvatar() {
 // ANA BİLEŞEN
 // ════════════════════════════════════════════════════════
 export default function ProfileScreen() {
-  const [name, setName] = useState('No Name');
+  const [name, setName] = useState('Budi');
   const [editing, setEditing] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
