@@ -5,22 +5,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import ScreenHeader from '../components/ScreenHeader';
-
-// ── Renk Paleti ────────────────────────────────────────
-const C = {
-  bg: '#F6EFEA',
-  cream: '#F6EFEA',
-  beige: '#EFE5DD',
-  beigeDeep: '#E3D5CC',
-  orange: '#FF8A1F',
-  green: '#8FB339',
-  brown: '#A35414',
-  pink: '#E78AC3',
-  text: '#1F1F1F',
-  muted: '#7A7A7A',
-  border: '#E6E6E6',
-  chevron: '#BBBBBB',
-};
+import { C } from '../constants/colors';
 
 // ── Menü Öğeleri ───────────────────────────────────────
 const MENU_ITEMS = [
@@ -62,7 +47,7 @@ export default function ProfileScreen() {
               activeOpacity={0.6}
             >
               {/* İkon kutusu */}
-              <View style={[styles.iconBox, { backgroundColor: C.cream }]}>
+              <View style={[styles.iconBox, { backgroundColor: C.bg }]}>
                 <Feather name={item.icon as any} size={20} color={item.accent} />
               </View>
 

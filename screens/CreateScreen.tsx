@@ -1,31 +1,16 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, Modal, Dimensions, FlatList, Platform, Alert, Switch,
+  TextInput, Dimensions, FlatList, Platform, Alert, Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenHeader from '../components/ScreenHeader';
+import BottomSheet from '../components/BottomSheet';
+import PillTabs from '../components/PillTabs';
+import { C } from '../constants/colors';
 import { HabitCard } from './HomeScreen';
-
-// ── Renk Paleti ────────────────────────────────────────
-const C = {
-  bg: '#F6EFEA',
-  orange: '#FF8A1F',
-  orangeDark: '#E06B00',
-  red: '#E85A4F',
-  redLight: '#FFF0EE',
-  text: '#1F1F1F',
-  muted: '#7A7A7A',
-  border: '#E6E6E6',
-  tabBg: '#F6EFEA',
-  overlay: 'rgba(0,0,0,0.38)',
-  calBg: '#FFF2D0',
-  purple: '#7B6FCF',
-  purpleLight: '#F0EFF9',
-  handle: '#DEDEDE',
-};
 
 const SCREEN_H = Dimensions.get('window').height;
 
@@ -108,14 +93,9 @@ function CalendarSheet({ visible, selectedDate, onConfirm, onCancel }: {
     current && pickedDate.getDate() === day &&
     pickedDate.getMonth() === month && pickedDate.getFullYear() === year;
 
-  if (!visible) return null;
-
   return (
-    <Modal transparent animationType="slide" visible={visible} onRequestClose={onCancel}>
-      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onCancel} />
-      <View style={[styles.sheet, { paddingBottom: 32 }]}>
-        <View style={styles.handle} />
-
+    <BottomSheet visible={visible} onClose={onCancel}>
+      <View style={{ paddingBottom: 32 }}>
         {/* Takvim */}
         <View style={[styles.calBox, { marginTop: 8 }]}>
           {/* Ay navigasyonu */}
@@ -193,7 +173,7 @@ function CalendarSheet({ visible, selectedDate, onConfirm, onCancel }: {
           </TouchableOpacity>
         </View>
       </View>
-    </Modal>
+    </BottomSheet>
   );
 }
 
@@ -209,14 +189,9 @@ function IconPickerSheet({ visible, selectedIcon, onSelect, onCancel }: {
   const [tab, setTab] = useState<'activity' | 'lifestyle'>('activity');
   const list = tab === 'activity' ? ICONS_ACTIVITY : ICONS_LIFESTYLE;
 
-  if (!visible) return null;
-
   return (
-    <Modal transparent animationType="slide" visible={visible} onRequestClose={onCancel}>
-      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onCancel} />
-      <View style={[styles.sheet, { maxHeight: SCREEN_H * 0.65, paddingBottom: 32 }]}>
-        <View style={styles.handle} />
-
+    <BottomSheet visible={visible} onClose={onCancel} maxHeight={SCREEN_H * 0.65}>
+      <View style={{ paddingBottom: 32 }}>
         <View style={styles.iconSheetHeader}>
           <Text style={styles.sheetTitle}>İkon Seç</Text>
           <TouchableOpacity
@@ -228,32 +203,12 @@ function IconPickerSheet({ visible, selectedIcon, onSelect, onCancel }: {
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.sheetBtnRow, { paddingHorizontal: 20, marginBottom: 12 }]}>
-          {(['activity', 'lifestyle'] as const).map(t => (
-            <TouchableOpacity
-              key={t}
-              onPress={() => setTab(t)}
-              activeOpacity={0.8}
-              style={{ flex: 1 }}
-            >
-              {tab === t ? (
-                <LinearGradient
-                  colors={[C.orange, C.orange]}
-                  style={styles.iconTabBtn}
-                >
-                  <Text style={[styles.iconTabText, { color: '#fff' }]}>
-                    {t === 'activity' ? 'Aktivite' : 'Yaşam'}
-                  </Text>
-                </LinearGradient>
-              ) : (
-                <View style={[styles.iconTabBtn, { backgroundColor: C.tabBg }]}>
-                  <Text style={[styles.iconTabText, { color: C.muted }]}>
-                    {t === 'activity' ? 'Aktivite' : 'Yaşam'}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          ))}
+        <View style={{ paddingHorizontal: 20, marginBottom: 12 }}>
+          <PillTabs
+            tabs={[{ key: 'activity', label: 'Aktivite' }, { key: 'lifestyle', label: 'Yaşam' }]}
+            activeKey={tab}
+            onChange={(k) => setTab(k as 'activity' | 'lifestyle')}
+          />
         </View>
 
         <FlatList
@@ -282,7 +237,7 @@ function IconPickerSheet({ visible, selectedIcon, onSelect, onCancel }: {
           }}
         />
       </View>
-    </Modal>
+    </BottomSheet>
   );
 }
 
@@ -397,11 +352,8 @@ function ColorPickerSheet({ visible, selectedColor, onSelect, onCancel }: {
   };
 
   return (
-    <Modal transparent animationType="slide" visible={visible} onRequestClose={dismiss}>
-      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={dismiss} />
-      <View style={[styles.sheet, { paddingBottom: 36 }]}>
-        <View style={styles.handle} />
-
+    <BottomSheet visible={visible} onClose={dismiss}>
+      <View style={{ paddingBottom: 36 }}>
         {!showSpectrum && (
           <View style={styles.iconSheetHeader}>
             <Text style={styles.sheetTitle}>Renk Seç</Text>
@@ -451,7 +403,7 @@ function ColorPickerSheet({ visible, selectedColor, onSelect, onCancel }: {
           </View>
         )}
       </View>
-    </Modal>
+    </BottomSheet>
   );
 }
 
@@ -818,27 +770,6 @@ const styles = StyleSheet.create({
   saveBtn: { borderRadius: 16, paddingVertical: 14, alignItems: 'center' },
   saveBtnText: { fontSize: 16, fontWeight: '700', color: '#fff', letterSpacing: 0.3 },
 
-  // Ortak overlay
-  overlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: C.overlay,
-  },
-
-  // Bottom sheet
-  sheet: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: C.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28,
-    paddingBottom: 36,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.12, shadowRadius: 16 },
-      android: { elevation: 20 },
-    }),
-  },
-  handle: {
-    width: 40, height: 4, borderRadius: 100,
-    backgroundColor: C.handle, alignSelf: 'center', marginTop: 12, marginBottom: 4,
-  },
-
   sheetBtnRow: { flexDirection: 'row', gap: 12 },
   cancelBtn: {
     flex: 1, borderRadius: 14, paddingVertical: 15,
@@ -882,11 +813,6 @@ const styles = StyleSheet.create({
     width: 32, height: 32, borderRadius: 16,
     backgroundColor: '#F4F4F4', alignItems: 'center', justifyContent: 'center',
   },
-  iconTabBtn: {
-    flex: 1, paddingVertical: 11, borderRadius: 50,
-    alignItems: 'center', marginHorizontal: 4,
-  },
-  iconTabText: { fontSize: 14, fontWeight: '700' },
   iconCell: {
     flex: 1, aspectRatio: 1, margin: 4, borderRadius: 16,
     alignItems: 'center', justifyContent: 'center',

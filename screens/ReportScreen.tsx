@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Modal, Dimensions, Platform, Animated, Easing,
+  View, Text, StyleSheet, ScrollView,
+  Dimensions, Platform, Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -9,24 +9,9 @@ import Svg, {
   Rect, Path, Circle, Defs, LinearGradient as SvgGradient,
   Stop, G, Text as SvgText, Polygon,
 } from 'react-native-svg';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenHeader from '../components/ScreenHeader';
-
-// ── Renk Paleti ────────────────────────────────────────
-const C = {
-  bg: '#F6EFEA',
-  cardCream: '#F6EFEA',
-  orange: '#FF8A1F',
-  orangeLight: '#FFC58A',
-  orangeBg: '#FFF4EA',
-  green: '#8FB339',
-  brown: '#A35414',
-  pink: '#E78AC3',
-  text: '#1F1F1F',
-  muted: '#7A7A7A',
-  border: '#E6E6E6',
-  axisTick: '#BBBBBB',
-};
+import Dropdown from '../components/Dropdown';
+import { C } from '../constants/colors';
 
 const W = Dimensions.get('window').width;
 const CARD_W = W - 32;      // 16px padding × 2
@@ -122,125 +107,6 @@ function buildBezierPath(
   return { linePath: line, areaPath: area };
 }
 
-// ── Saate göre selamlama & ikon ───────────────────────
-function getTimeOfDay() {
-  const hour = new Date().getHours();
-  if (hour >= 5 && hour < 12) return { greeting: 'Günaydın', icon: 'weather-sunny', bg: '#FF8A1F', type: 'day' };
-  if (hour >= 12 && hour < 17) return { greeting: 'İyi Günler', icon: 'white-balance-sunny', bg: '#F5A623', type: 'day' };
-  if (hour >= 17 && hour < 21) return { greeting: 'İyi Akşamlar', icon: 'weather-sunset', bg: '#E06B00', type: 'night' };
-  return { greeting: 'İyi Geceler', icon: 'weather-night', bg: '#3D5A99', type: 'night' };
-}
-
-// ── AnimatedTimeIcon ──────────────────────────────────
-function AnimatedTimeIcon({ icon, type }: { icon: string; type: string }) {
-  const animValue = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (type === 'day') {
-      Animated.loop(
-        Animated.timing(animValue, {
-          toValue: 1,
-          duration: 10000,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        })
-      ).start();
-    } else {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(animValue, {
-            toValue: 1,
-            duration: 2500,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(animValue, {
-            toValue: 0,
-            duration: 2500,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    }
-  }, [type, animValue]);
-
-  const animatedStyle =
-    type === 'day'
-      ? {
-        transform: [
-          {
-            rotate: animValue.interpolate({
-              inputRange: [0, 1],
-              outputRange: ['0deg', '360deg'],
-            }),
-          },
-        ],
-      }
-      : {
-        transform: [
-          {
-            scale: animValue.interpolate({
-              inputRange: [0, 1],
-              outputRange: [1, 1.15],
-            }),
-          },
-        ],
-      };
-
-  return (
-    <Animated.View style={animatedStyle}>
-      <MaterialCommunityIcons name={icon as any} size={26} color="#fff" />
-    </Animated.View>
-  );
-}
-
-// ════════════════════════════════════════════════════════
-// DROPDOWN BİLEŞENİ
-// ════════════════════════════════════════════════════════
-function Dropdown({ options, value, onChange }: {
-  options: string[]; value: string; onChange: (v: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <View>
-      <TouchableOpacity
-        style={styles.dropBtn}
-        onPress={() => setOpen(true)}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.dropBtnText}>{value}</Text>
-        <Text style={[styles.dropBtnText, { fontSize: 10 }]}>▾</Text>
-      </TouchableOpacity>
-
-      <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
-        <TouchableOpacity
-          style={{ flex: 1 }}
-          activeOpacity={1}
-          onPress={() => setOpen(false)}
-        />
-        <View style={styles.dropMenu}>
-          {options.map((opt) => (
-            <TouchableOpacity
-              key={opt}
-              style={[styles.dropItem, opt === value && styles.dropItemActive]}
-              onPress={() => { onChange(opt); setOpen(false); }}
-              activeOpacity={0.7}
-            >
-              <Text style={[
-                styles.dropItemText,
-                opt === value && { color: C.orange, fontWeight: '700' },
-              ]}>
-                {opt}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </Modal>
-    </View>
-  );
-}
-
 // ════════════════════════════════════════════════════════
 // ÇUBUK GRAFİK
 // ════════════════════════════════════════════════════════
@@ -250,7 +116,6 @@ const X_AXIS_H = 20;
 const PIN_H = 46;
 const TOP_PAD = PIN_H + 10;
 const PLOT_H = BAR_H - TOP_PAD - X_AXIS_H;
-const PLOT_W_BASE = CHART_INNER - Y_AXIS_W;
 
 function BarChartSvg({ config, activeIdx, onBarPress, progress = 1 }: {
   config: BarConfig;
@@ -451,7 +316,6 @@ function AreaChartSvg({ config, activeIdx, onDotPress }: {
 // ANA BİLEŞEN
 // ════════════════════════════════════════════════════════
 export default function ReportScreen() {
-  const timeOfDay = getTimeOfDay();
   const [barPeriod, setBarPeriod] = useState('Bu Hafta');
   const [linePeriod, setLinePeriod] = useState('Son 6 Ay');
   const [activeBarIdx, setActiveBarIdx] = useState(BAR_DATA['Bu Hafta'].defaultIdx);
@@ -519,7 +383,7 @@ export default function ReportScreen() {
               key={i}
               style={[
                 styles.statCard,
-                { backgroundColor: i % 2 === 0 ? C.bg : C.cardCream },
+                { backgroundColor: i % 2 === 0 ? C.bg : C.bg },
               ]}
             >
               <Text style={[styles.statValue, { color: c.accent }]}>{c.value}</Text>
@@ -592,19 +456,6 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 4 },
 
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: C.orange,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6 },
-      android: { elevation: 3 },
-    }),
-  },
-
   // Özet kartlar
   statGrid: {
     flexDirection: 'row', flexWrap: 'wrap',
@@ -637,26 +488,4 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', marginBottom: 16,
   },
   chartTitle: { fontSize: 16, fontWeight: '700', color: C.text },
-
-  // Dropdown
-  dropBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: C.cardCream,
-    borderWidth: 1.5, borderColor: C.border,
-    borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
-  },
-  dropBtnText: { fontSize: 13, fontWeight: '600', color: C.text },
-  dropMenu: {
-    position: 'absolute', bottom: 80, right: 16,
-    backgroundColor: C.bg, borderRadius: 14,
-    borderWidth: 1, borderColor: C.border,
-    minWidth: 160, overflow: 'hidden',
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16 },
-      android: { elevation: 8 },
-    }),
-  },
-  dropItem: { paddingHorizontal: 16, paddingVertical: 10 },
-  dropItemActive: { backgroundColor: C.orangeBg },
-  dropItemText: { fontSize: 13, color: C.text },
 });
