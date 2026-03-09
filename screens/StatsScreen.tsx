@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ScreenHeader from '../components/ScreenHeader';
 
 // ── Renk Paleti ────────────────────────────────────────
 const C = {
@@ -350,11 +351,8 @@ export default function StatsScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      {/* Başlık */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>İstatistikler</Text>
-        <Text style={styles.headerSub}>Alışkanlık takibi</Text>
-      </View>
+      {/* ── Başlık ──────────────────────────────────── */}
+      <ScreenHeader title="İstatistikler" subtitle="Alışkanlık takibi" />
 
       {/* Tab Switcher */}
       <View style={styles.tabWrap}>
@@ -408,9 +406,6 @@ export default function StatsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
 
-  header: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16 },
-  headerTitle: { fontSize: 24, fontWeight: '700', color: C.text, lineHeight: 30 },
-  headerSub: { fontSize: 13, color: C.muted, marginTop: 3 },
 
   // Tab
   tabWrap: { paddingHorizontal: 16, paddingBottom: 16 },

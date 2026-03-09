@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import ScreenHeader from '../components/ScreenHeader';
 import { HabitCard } from './HomeScreen';
 
 // ── Renk Paleti ────────────────────────────────────────
@@ -486,12 +487,7 @@ export default function CreateScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
 
       {/* ── Başlık ──────────────────────────────────── */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Alışkanlık Ekle</Text>
-          <Text style={styles.headerSub}>Yeni bir alışkanlık ekle</Text>
-        </View>
-      </View>
+      <ScreenHeader title="Alışkanlık Ekle" subtitle="Yeni bir alışkanlık ekle" />
 
       <ScrollView
         style={styles.scroll}
@@ -674,12 +670,6 @@ export default function CreateScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16,
-  },
-  headerTitle: { fontSize: 24, fontWeight: '700', color: C.text, lineHeight: 30 },
-  headerSub: { fontSize: 13, color: C.muted, marginTop: 3 },
 
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingTop: 24 },

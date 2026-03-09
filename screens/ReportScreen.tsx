@@ -10,6 +10,7 @@ import Svg, {
   Stop, G, Text as SvgText, Polygon,
 } from 'react-native-svg';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import ScreenHeader from '../components/ScreenHeader';
 
 // ── Renk Paleti ────────────────────────────────────────
 const C = {
@@ -504,11 +505,7 @@ export default function ReportScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
 
       {/* ── Başlık ──────────────────────────────── */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Raporlar</Text>
-        </View>
-      </View>
+      <ScreenHeader title="Raporlar" subtitle="Haftalık ve aylık özet" />
 
       <ScrollView
         style={styles.scroll}
@@ -595,18 +592,6 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 4 },
 
-  // Header
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
-  },
-  greeting: { fontSize: 24, fontWeight: '700', color: C.text, lineHeight: 30 },
-  dateText: { fontSize: 13, color: C.muted, marginTop: 3 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   avatar: {
     width: 40,
     height: 40,
