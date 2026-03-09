@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, Dimensions, FlatList, Platform, Alert, Switch,
+  TextInput, Dimensions, FlatList, Platform, Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,6 +11,7 @@ import BottomSheet from '../components/BottomSheet';
 import PillTabs from '../components/PillTabs';
 import { C } from '../constants/colors';
 import { HabitCard } from './HomeScreen';
+import { useToast } from '../components/ToastProvider';
 
 const SCREEN_H = Dimensions.get('window').height;
 
@@ -411,6 +412,7 @@ function ColorPickerSheet({ visible, selectedColor, onSelect, onCancel }: {
 // ANA BİLEŞEN
 // ════════════════════════════════════════════════════════
 export default function CreateScreen() {
+  const { showToast } = useToast();
   const [taskName, setTaskName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState<IconName>('medal');
   const [selectedColor, setSelectedColor] = useState('#FF8A1F');
@@ -425,14 +427,26 @@ export default function CreateScreen() {
 
   const handleSave = () => {
     if (!taskName.trim()) {
-      Alert.alert('Alışkanlık adı gerekli', 'Lütfen bir alışkanlık adı girin.');
+      showToast({
+        type: 'error',
+        title: 'Alışkanlık adı gerekli',
+        message: 'Lütfen bir alışkanlık adı girin.',
+      });
       return;
     }
     if (!noEndDate && endDate < startDate) {
-      Alert.alert('Geçersiz tarih', 'Bitiş tarihi başlangıç tarihinden önce olamaz.');
+      showToast({
+        type: 'error',
+        title: 'Geçersiz tarih',
+        message: 'Bitiş tarihi başlangıç tarihinden önce olamaz.',
+      });
       return;
     }
-    Alert.alert('Kaydedildi!', `"${taskName.trim()}" alışkanlığı oluşturuldu.`);
+    showToast({
+      type: 'success',
+      title: 'Kaydedildi',
+      message: `"${taskName.trim()}" alışkanlığı oluşturuldu.`,
+    });
   };
 
   return (
