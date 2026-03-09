@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -12,10 +12,14 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { C } from '../constants/colors';
+import {
+  getThemedAccentSurface,
+  useAppColors,
+  useIsDark,
+  type AppColors,
+} from '../constants/colors';
 import { getTimeOfDay, AnimatedTimeIcon } from '../utils/timeOfDay';
 
-// ── Hafta günleri ──────────────────────────────────────
 const WEEK_DAYS = [
   { day: 'Pzt', date: 7, pct: 75 },
   { day: 'Sal', date: 8, pct: 100 },
@@ -26,7 +30,6 @@ const WEEK_DAYS = [
   { day: 'Paz', date: 13, pct: 60 },
 ];
 
-// ── Habit listesi ──────────────────────────────────────
 export interface Habit {
   id: number;
   name: string;
@@ -45,55 +48,59 @@ const INITIAL_HABITS: Habit[] = [
   { id: 6, name: 'Su İç', completed: false, bgColor: '#E2F0FB', icon: 'water', iconColor: '#4A90D9' },
 ];
 
-// ── Dairesel İlerleme (SVG) ────────────────────────────
 function CircleDay({
   day, date, pct, isSelected, isToday, onPress,
 }: {
-  day: string; date: number; pct: number;
-  isSelected: boolean; isToday?: boolean; onPress: () => void;
+  day: string;
+  date: number;
+  pct: number;
+  isSelected: boolean;
+  isToday?: boolean;
+  onPress: () => void;
 }) {
-  const SIZE = 44;
-  const R = 17;
-  const STROKE = 3;
-  const CIRC = 2 * Math.PI * R;
-  const offset = CIRC * (1 - pct / 100);
-
-  const ringColor = pct > 0 ? C.orange : C.border;
+  const colors = useAppColors();
+  const isDark = useIsDark();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const size = 44;
+  const radius = 17;
+  const strokeWidth = 3;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - pct / 100);
+  const ringColor = pct > 0 ? colors.orange : colors.border;
 
   return (
     <TouchableOpacity onPress={onPress} style={styles.dayBtn} activeOpacity={0.7}>
       <Text style={[styles.dayLabel, isSelected && styles.dayLabelActive]}>{day}</Text>
-      <View style={{ width: SIZE, height: SIZE }}>
-        <Svg width={SIZE} height={SIZE} style={{ transform: [{ rotate: '-90deg' }] }}>
+      <View style={{ width: size, height: size }}>
+        <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
           <Circle
-            cx={SIZE / 2} cy={SIZE / 2} r={R}
-            fill={isSelected ? 'rgba(255,138,31,0.08)' : 'transparent'}
-            stroke={C.border} strokeWidth={STROKE}
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill={isSelected ? colors.ringFill : 'transparent'}
+            stroke={colors.border}
+            strokeWidth={strokeWidth}
           />
           {pct > 0 && (
             <Circle
-              cx={SIZE / 2} cy={SIZE / 2} r={R}
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
               fill="none"
               stroke={ringColor}
-              strokeWidth={STROKE}
-              strokeDasharray={`${CIRC} ${CIRC}`}
+              strokeWidth={strokeWidth}
+              strokeDasharray={`${circumference} ${circumference}`}
               strokeDashoffset={offset}
               strokeLinecap="round"
             />
           )}
         </Svg>
         <View style={styles.dayNumWrap}>
-          <Text style={[
-            styles.dayNum,
-            isSelected && { color: C.orange, fontWeight: '700' },
-          ]}>
+          <Text style={[styles.dayNum, isSelected && { color: colors.orange, fontWeight: '700' }]}>
             {date}
           </Text>
           {isToday && (
-            <View style={[
-              styles.todayDot,
-              { backgroundColor: isSelected ? C.orange : C.border },
-            ]} />
+            <View style={[styles.todayDot, { backgroundColor: isSelected ? colors.orange : colors.border }]} />
           )}
         </View>
       </View>
@@ -101,7 +108,6 @@ function CircleDay({
   );
 }
 
-// ── Swipeable Habit Card ───────────────────────────────
 const SWIPE_THRESHOLD = 80;
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -109,8 +115,16 @@ export function HabitCard({
   habit,
   onToggle,
 }: {
-  habit: Habit; onToggle: (id: number) => void;
+  habit: Habit;
+  onToggle: (id: number) => void;
 }) {
+  const colors = useAppColors();
+  const isDark = useIsDark();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const habitSurface = useMemo(
+    () => getThemedAccentSurface(habit.bgColor, colors, isDark, 0.8),
+    [habit.bgColor, colors, isDark]
+  );
   const translateX = useRef(new Animated.Value(0)).current;
   const revealOpacity = translateX.interpolate({
     inputRange: [-130, 0],
@@ -119,7 +133,7 @@ export function HabitCard({
   });
   const bgColor = translateX.interpolate({
     inputRange: [-130, -SWIPE_THRESHOLD, 0],
-    outputRange: [C.orangeDark, C.orange, C.orange],
+    outputRange: [colors.orangeDark, colors.orange, colors.orange],
     extrapolate: 'clamp',
   });
 
@@ -128,8 +142,8 @@ export function HabitCard({
       onMoveShouldSetPanResponder: (_, g) =>
         !habit.completed && Math.abs(g.dx) > Math.abs(g.dy) && Math.abs(g.dx) > 5,
       onPanResponderMove: (_, g) => {
-        const v = Math.min(0, Math.max(-130, g.dx));
-        translateX.setValue(v);
+        const value = Math.min(0, Math.max(-130, g.dx));
+        translateX.setValue(value);
       },
       onPanResponderRelease: (_, g) => {
         if (g.dx < -SWIPE_THRESHOLD) {
@@ -146,52 +160,46 @@ export function HabitCard({
 
   return (
     <View style={styles.cardWrap}>
-      {/* Swipe arka planı */}
       <Animated.View style={[styles.cardReveal, { backgroundColor: bgColor, opacity: revealOpacity }]}>
         <Text style={styles.checkIcon}>✓</Text>
       </Animated.View>
 
-      {/* Kart içeriği */}
       <AnimatedTouchable
         style={[
           styles.card,
-          { backgroundColor: habit.completed ? '#F5F5F5' : habit.bgColor },
+          { backgroundColor: habit.completed ? colors.surfaceAlt : habitSurface },
           { transform: [{ translateX }] },
         ]}
         onPress={() => onToggle(habit.id)}
         activeOpacity={0.85}
         {...(!habit.completed ? panResponder.panHandlers : {})}
       >
-        {/* İkon */}
         <View style={[styles.emojiBox, { opacity: habit.completed ? 0.65 : 1 }]}>
           <MaterialCommunityIcons name={habit.icon as any} size={22} color={habit.iconColor} />
         </View>
 
-        {/* İsim */}
-        <Text style={[
-          styles.habitName,
-          habit.completed && styles.habitNameDone,
-        ]}>
+        <Text style={[styles.habitName, habit.completed && styles.habitNameDone]}>
           {habit.name}
         </Text>
 
-        {/* Sağ taraf */}
         {habit.completed && (
           <TouchableOpacity style={styles.doneCircle} onPress={() => onToggle(habit.id)} activeOpacity={0.7}>
             <Text style={styles.doneCheck}>✓</Text>
           </TouchableOpacity>
         )}
       </AnimatedTouchable>
-
     </View>
   );
 }
 
-// ── Ana Bileşen ────────────────────────────────────────
 export default function HomeScreen() {
+  const colors = useAppColors();
+  const isDark = useIsDark();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const [habits, setHabits] = useState<Habit[]>(INITIAL_HABITS);
   const [selectedDate, setSelectedDate] = useState(10);
   const insets = useSafeAreaInsets();
+
   const toggleHabit = (id: number) => {
     setHabits(prev => prev.map(h => h.id === id ? { ...h, completed: !h.completed } : h));
   };
@@ -199,18 +207,16 @@ export default function HomeScreen() {
   const completed = habits.filter(h => h.completed);
   const active = habits.filter(h => !h.completed);
   const todayPct = Math.round((completed.length / habits.length) * 100);
-
   const weekDays = WEEK_DAYS.map(d => ({
     ...d,
     pct: d.isToday ? todayPct : (d.pct ?? 0),
   }));
-
   const timeOfDay = getTimeOfDay();
 
   return (
     <View style={styles.safe}>
-      <View style={{ height: insets.top, backgroundColor: C.bg }} />
-      {/* ── Başlık + Haftalık Takvim ─────────────── */}
+      <View style={{ height: insets.top, backgroundColor: colors.bg }} />
+
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View>
@@ -224,7 +230,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* ── Haftalık Takvim ─────────────────────── */}
         <View style={styles.weekRow}>
           {weekDays.map(d => (
             <CircleDay
@@ -248,12 +253,11 @@ export default function HomeScreen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Alışkanlıklarım</Text>
         </View>
-        {/* Aktif alışkanlıklar */}
+
         {active.map(h => (
           <HabitCard key={h.id} habit={h} onToggle={toggleHabit} />
         ))}
 
-        {/* Tamamlananlar */}
         {completed.length > 0 && (
           <>
             <Text style={styles.completedLabel}>Tamamlananlar</Text>
@@ -269,91 +273,125 @@ export default function HomeScreen() {
   );
 }
 
-// ── Stiller ────────────────────────────────────────────
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#fff' },
-  scroll: { flex: 1, backgroundColor: C.bg },
-  scrollContent: { paddingTop: 12, paddingBottom: 16 },
+function createStyles(colors: AppColors, isDark: boolean) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.screen },
+    scroll: { flex: 1, backgroundColor: colors.bg },
+    scrollContent: { paddingTop: 12, paddingBottom: 16 },
 
-  // Header
-  header: {
-    backgroundColor: C.bg,
-    paddingBottom: 4,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 4,
-  },
-  greeting: { fontSize: 24, fontWeight: '700', color: C.text, lineHeight: 30 },
-  dateText: { fontSize: 13, color: C.muted, marginTop: 3 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    header: {
+      backgroundColor: colors.bg,
+      paddingBottom: 4,
+    },
+    headerTop: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingTop: 14,
+      paddingBottom: 4,
+    },
+    greeting: { fontSize: 24, fontWeight: '700', color: colors.text, lineHeight: 30 },
+    dateText: { fontSize: 13, color: colors.muted, marginTop: 3 },
+    headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    avatar: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...Platform.select({
+        ios: {
+          shadowColor: colors.shadowSoft,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0.26 : 0.12,
+          shadowRadius: 6,
+        },
+        android: { elevation: 3 },
+      }),
+    },
 
-  avatar: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: C.orange,
-    alignItems: 'center', justifyContent: 'center',
-    ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6 }, android: { elevation: 3 } }),
-  },
+    weekRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingVertical: 18,
+    },
+    dayBtn: { alignItems: 'center', gap: 5 },
+    dayLabel: { fontSize: 11, color: colors.muted, fontWeight: '400' },
+    dayLabelActive: { color: colors.text, fontWeight: '700' },
+    dayNumWrap: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    dayNum: { fontSize: 14, fontWeight: '500', color: colors.text },
+    todayDot: { width: 4, height: 4, borderRadius: 2, marginTop: 2 },
 
-  // Haftalık takvim
-  weekRow: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 18,
-  },
-  dayBtn: { alignItems: 'center', gap: 5 },
-  dayLabel: { fontSize: 11, color: C.muted, fontWeight: '400' },
-  dayLabelActive: { color: C.text, fontWeight: '700' },
-  dayNumWrap: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  dayNum: { fontSize: 14, fontWeight: '500', color: C.text },
-  todayDot: { width: 4, height: 4, borderRadius: 2, marginTop: 2 },
+    sectionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingTop: 6,
+      paddingBottom: 8,
+      backgroundColor: colors.bg,
+    },
+    sectionTitle: { fontSize: 13, fontWeight: '500', color: colors.muted },
 
-  // Bölüm başlığı
-  sectionHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingTop: 6, paddingBottom: 8, backgroundColor: C.bg,
-  },
-  sectionTitle: { fontSize: 13, fontWeight: '500', color: C.muted },
+    cardWrap: { paddingHorizontal: 16, marginBottom: 7, position: 'relative' },
+    cardReveal: {
+      position: 'absolute',
+      top: 0,
+      left: 16,
+      right: 16,
+      bottom: 0,
+      borderRadius: 18,
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+      paddingRight: 22,
+    },
+    checkIcon: { fontSize: 22, color: colors.white, fontWeight: '700' },
 
-  // Kart
-  cardWrap: { paddingHorizontal: 16, marginBottom: 7, position: 'relative' },
-  cardReveal: {
-    position: 'absolute',
-    top: 0, left: 16, right: 16, bottom: 0,
-    borderRadius: 18,
-    alignItems: 'flex-end', justifyContent: 'center',
-    paddingRight: 22,
-  },
-  checkIcon: { fontSize: 22, color: '#fff', fontWeight: '700' },
+    card: {
+      borderRadius: 16,
+      padding: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    emojiBox: {
+      width: 38,
+      height: 38,
+      borderRadius: 11,
+      backgroundColor: colors.translucentCard,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    habitName: { flex: 1, fontSize: 15, fontWeight: '600', color: colors.text },
+    habitNameDone: { color: colors.muted, textDecorationLine: 'line-through' },
 
-  card: {
-    borderRadius: 16, padding: 10,
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-  },
-  emojiBox: {
-    width: 38, height: 38, borderRadius: 11,
-    backgroundColor: 'rgba(255,255,255,0.55)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  habitName: { flex: 1, fontSize: 15, fontWeight: '600', color: C.text },
-  habitNameDone: { color: C.muted, textDecorationLine: 'line-through' },
+    doneCircle: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: colors.orange,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    doneCheck: { color: colors.white, fontSize: 15, fontWeight: '700' },
 
-  doneCircle: {
-    width: 30, height: 30, borderRadius: 15,
-    backgroundColor: C.orange,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  doneCheck: { color: '#fff', fontSize: 15, fontWeight: '700' },
-
-  // Tamamlananlar
-  completedLabel: {
-    fontSize: 13, color: C.muted, fontWeight: '500',
-    paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8,
-  },
-});
+    completedLabel: {
+      fontSize: 13,
+      color: colors.muted,
+      fontWeight: '500',
+      paddingHorizontal: 20,
+      paddingTop: 8,
+      paddingBottom: 8,
+    },
+  });
+}

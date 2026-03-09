@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { C } from '../constants/colors';
+import { useAppColors, useIsDark, type AppColors } from '../constants/colors';
 
 interface PillTabsProps {
   tabs: { key: string; label: string }[];
@@ -9,6 +9,10 @@ interface PillTabsProps {
 }
 
 export default function PillTabs({ tabs, activeKey, onChange }: PillTabsProps) {
+  const colors = useAppColors();
+  const isDark = useIsDark();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+
   return (
     <View style={styles.container}>
       {tabs.map((t) => (
@@ -27,32 +31,34 @@ export default function PillTabs({ tabs, activeKey, onChange }: PillTabsProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    backgroundColor: C.tabBg,
-    borderRadius: 50,
-    padding: 4,
-    gap: 2,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 46,
-    alignItems: 'center',
-  },
-  tabActive: {
-    backgroundColor: C.orange,
-    ...Platform.select({
-      ios: {
-        shadowColor: C.orange,
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.35,
-        shadowRadius: 6,
-      },
-      android: { elevation: 4 },
-    }),
-  },
-  label: { fontSize: 13, fontWeight: '700', color: C.muted },
-  labelActive: { color: C.white },
-});
+function createStyles(colors: AppColors, isDark: boolean) {
+  return StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      backgroundColor: colors.tabBg,
+      borderRadius: 50,
+      padding: 4,
+      gap: 2,
+    },
+    tab: {
+      flex: 1,
+      paddingVertical: 10,
+      borderRadius: 46,
+      alignItems: 'center',
+    },
+    tabActive: {
+      backgroundColor: colors.orange,
+      ...Platform.select({
+        ios: {
+          shadowColor: colors.orange,
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: isDark ? 0.28 : 0.35,
+          shadowRadius: 6,
+        },
+        android: { elevation: 4 },
+      }),
+    },
+    label: { fontSize: 13, fontWeight: '700', color: colors.muted },
+    labelActive: { color: colors.white },
+  });
+}

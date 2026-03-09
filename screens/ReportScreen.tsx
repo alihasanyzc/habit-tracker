@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   Dimensions, Platform, Animated,
@@ -11,21 +11,19 @@ import Svg, {
 } from 'react-native-svg';
 import ScreenHeader from '../components/ScreenHeader';
 import Dropdown from '../components/Dropdown';
-import { C } from '../constants/colors';
+import { ACCENT, useAppColors, useIsDark, type AppColors } from '../constants/colors';
 
 const W = Dimensions.get('window').width;
-const CARD_W = W - 32;      // 16px padding × 2
-const CHART_INNER = CARD_W - 32; // card iç padding × 2
+const CARD_W = W - 32;
+const CHART_INNER = CARD_W - 32;
 
-// ── Özet Kart Verileri ─────────────────────────────────
 const STAT_CARDS = [
-  { value: '226 gün', label: 'Mevcut seri', accent: C.orange },
-  { value: '%89', label: 'Tamamlama oranı', accent: C.green },
-  { value: '3.268', label: 'Tamamlanan alışkanlık', accent: C.brown },
-  { value: '307', label: 'Mükemmel gün toplamı', accent: C.pink },
+  { value: '226 gün', label: 'Mevcut seri', accent: ACCENT.orange },
+  { value: '%89', label: 'Tamamlama oranı', accent: ACCENT.green },
+  { value: '3.268', label: 'Tamamlanan alışkanlık', accent: ACCENT.brown },
+  { value: '307', label: 'Mükemmel gün toplamı', accent: ACCENT.pink },
 ];
 
-// ── Bar Chart Dönem Verileri ───────────────────────────
 type BarItem = { label: string; val: number };
 type BarConfig = { items: BarItem[]; yMax: number; yTicks: number[]; defaultIdx: number };
 
@@ -56,7 +54,6 @@ const BAR_DATA: Record<string, BarConfig> = {
   },
 };
 
-// ── Area Chart Dönem Verileri ──────────────────────────
 type LineItem = { label: string; val: number };
 type LineConfig = { items: LineItem[]; activeIdx: number };
 
@@ -88,28 +85,32 @@ const LINE_DATA: Record<string, LineConfig> = {
   },
 };
 
-// ── Bezier Alan Yolu ───────────────────────────────────
+function useThemedStyles() {
+  const colors = useAppColors();
+  const isDark = useIsDark();
+  return useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+}
+
 function buildBezierPath(
-  pts: { x: number; y: number }[],
+  points: { x: number; y: number }[],
   chartH: number
 ): { linePath: string; areaPath: string } {
-  if (pts.length < 2) return { linePath: '', areaPath: '' };
-  let line = `M ${pts[0].x} ${pts[0].y}`;
-  for (let i = 1; i < pts.length; i++) {
-    const p = pts[i - 1];
-    const c = pts[i];
-    const cpX = (p.x + c.x) / 2;
-    line += ` C ${cpX} ${p.y} ${cpX} ${c.y} ${c.x} ${c.y}`;
+  if (points.length < 2) return { linePath: '', areaPath: '' };
+
+  let line = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1];
+    const current = points[i];
+    const controlPointX = (prev.x + current.x) / 2;
+    line += ` C ${controlPointX} ${prev.y} ${controlPointX} ${current.y} ${current.x} ${current.y}`;
   }
-  const last = pts[pts.length - 1];
-  const first = pts[0];
+
+  const last = points[points.length - 1];
+  const first = points[0];
   const area = `${line} L ${last.x} ${chartH} L ${first.x} ${chartH} Z`;
   return { linePath: line, areaPath: area };
 }
 
-// ════════════════════════════════════════════════════════
-// ÇUBUK GRAFİK
-// ════════════════════════════════════════════════════════
 const BAR_H = 200;
 const Y_AXIS_W = 28;
 const X_AXIS_H = 20;
@@ -123,84 +124,97 @@ function BarChartSvg({ config, activeIdx, onBarPress, progress = 1 }: {
   onBarPress: (i: number) => void;
   progress?: number;
 }) {
-  const N = config.items.length;
-  // Yatay kaydırma için öğe sayısına göre dinamik genişlik hesapla
-  const SVG_W = Math.max(CHART_INNER, Y_AXIS_W + N * 45 + 16);
-  const PLOT_W = SVG_W - Y_AXIS_W - 16;
-  const GAP = PLOT_W / (N * 1.6);
-  const BAR_W = (PLOT_W - GAP * (N - 1)) / N;
+  const colors = useAppColors();
+  const itemCount = config.items.length;
+  const svgWidth = Math.max(CHART_INNER, Y_AXIS_W + itemCount * 45 + 16);
+  const plotWidth = svgWidth - Y_AXIS_W - 16;
+  const gap = plotWidth / (itemCount * 1.6);
+  const barWidth = (plotWidth - gap * (itemCount - 1)) / itemCount;
 
-  const barX = (i: number) => Y_AXIS_W + i * (BAR_W + GAP);
-  const barH = (val: number) => (val / config.yMax) * PLOT_H * progress;
-  const barY = (val: number) => TOP_PAD + (PLOT_H - barH(val));
+  const barX = (index: number) => Y_AXIS_W + index * (barWidth + gap);
+  const barHeight = (value: number) => (value / config.yMax) * PLOT_H * progress;
+  const barY = (value: number) => TOP_PAD + (PLOT_H - barHeight(value));
 
   return (
-    <Svg width={SVG_W} height={BAR_H}>
-      {/* Y axis ticks */}
-      {config.yTicks.map((t) => {
-        const ty = TOP_PAD + PLOT_H - (t / config.yMax) * PLOT_H;
+    <Svg width={svgWidth} height={BAR_H}>
+      {config.yTicks.map(tick => {
+        const tickY = TOP_PAD + PLOT_H - (tick / config.yMax) * PLOT_H;
         return (
-          <G key={t}>
+          <G key={tick}>
             <SvgText
-              x={Y_AXIS_W - 4} y={ty + 4}
-              textAnchor="end" fontSize={10} fill={C.axisTick}
+              x={Y_AXIS_W - 4}
+              y={tickY + 4}
+              textAnchor="end"
+              fontSize={10}
+              fill={colors.axisTick}
             >
-              {t}
+              {tick}
             </SvgText>
           </G>
         );
       })}
 
-      {/* Bars */}
-      {config.items.map((item, i) => {
-        const bx = barX(i);
-        const bh = barH(item.val);
-        const by = barY(item.val);
-        const isAct = i === activeIdx;
-        const cx = bx + BAR_W / 2;
+      {config.items.map((item, index) => {
+        const x = barX(index);
+        const height = barHeight(item.val);
+        const y = barY(item.val);
+        const isActive = index === activeIdx;
+        const centerX = x + barWidth / 2;
 
         return (
-          <G key={i}>
+          <G key={index}>
             <Rect
-              x={bx} y={by} width={BAR_W} height={bh}
-              rx={6} ry={6}
-              fill={isAct ? C.orange : C.orangeLight}
-              onPress={() => onBarPress(i)}
+              x={x}
+              y={y}
+              width={barWidth}
+              height={height}
+              rx={6}
+              ry={6}
+              fill={isActive ? colors.orange : colors.orangeLight}
+              onPress={() => onBarPress(index)}
             />
-            {/* X label */}
             <SvgText
-              x={cx}
+              x={centerX}
               y={TOP_PAD + PLOT_H + X_AXIS_H - 4}
               textAnchor="middle"
-              fontSize={N > 7 ? 9 : 11}
-              fill={C.muted}
+              fontSize={itemCount > 7 ? 9 : 11}
+              fill={colors.muted}
             >
               {item.label}
             </SvgText>
-            {/* Pin tooltip */}
-            {isAct && (
+            {isActive && (
               <G>
                 <Rect
-                  x={cx - 27} y={by - PIN_H - 6}
-                  width={54} height={PIN_H - 4}
-                  rx={12} ry={12}
-                  fill="white"
+                  x={centerX - 27}
+                  y={y - PIN_H - 6}
+                  width={54}
+                  height={PIN_H - 4}
+                  rx={12}
+                  ry={12}
+                  fill={colors.surface}
                 />
                 <SvgText
-                  x={cx} y={by - PIN_H + 12}
-                  textAnchor="middle" fontSize={15} fontWeight="800" fill={C.orange}
+                  x={centerX}
+                  y={y - PIN_H + 12}
+                  textAnchor="middle"
+                  fontSize={15}
+                  fontWeight="800"
+                  fill={colors.orange}
                 >
                   {item.val}
                 </SvgText>
                 <SvgText
-                  x={cx} y={by - PIN_H + 26}
-                  textAnchor="middle" fontSize={9} fill={C.axisTick}
+                  x={centerX}
+                  y={y - PIN_H + 26}
+                  textAnchor="middle"
+                  fontSize={9}
+                  fill={colors.axisTick}
                 >
                   alışkanlık
                 </SvgText>
                 <Polygon
-                  points={`${cx - 5},${by - 6} ${cx + 5},${by - 6} ${cx},${by - 1}`}
-                  fill="white"
+                  points={`${centerX - 5},${y - 6} ${centerX + 5},${y - 6} ${centerX},${y - 1}`}
+                  fill={colors.surface}
                 />
               </G>
             )}
@@ -211,9 +225,6 @@ function BarChartSvg({ config, activeIdx, onBarPress, progress = 1 }: {
   );
 }
 
-// ════════════════════════════════════════════════════════
-// ALAN GRAFİK
-// ════════════════════════════════════════════════════════
 const LINE_H = 200;
 const LY_AXIS_W = 32;
 const LX_AXIS_H = 20;
@@ -225,83 +236,89 @@ function AreaChartSvg({ config, activeIdx, onDotPress }: {
   activeIdx: number;
   onDotPress: (i: number) => void;
 }) {
-  const N = config.items.length;
-  // Sağ boşluğu gidermek ve kaydırmayı düzgün sağlamak için dinamik genişlik hesapla
-  const SVG_W = Math.max(CHART_INNER, LY_AXIS_W + (N - 1) * 55 + 32);
-  const LPLOT_W = SVG_W - LY_AXIS_W - 32;
-  const step = LPLOT_W / Math.max(N - 1, 1);
-
-  const toY = (val: number) => LTOP_PAD + LPLOT_H - (val / 100) * LPLOT_H;
-  const pts = config.items.map((d, i) => ({
-    x: LY_AXIS_W + i * step,
-    y: toY(d.val),
+  const colors = useAppColors();
+  const itemCount = config.items.length;
+  const svgWidth = Math.max(CHART_INNER, LY_AXIS_W + (itemCount - 1) * 55 + 32);
+  const plotWidth = svgWidth - LY_AXIS_W - 32;
+  const step = plotWidth / Math.max(itemCount - 1, 1);
+  const toY = (value: number) => LTOP_PAD + LPLOT_H - (value / 100) * LPLOT_H;
+  const points = config.items.map((item, index) => ({
+    x: LY_AXIS_W + index * step,
+    y: toY(item.val),
   }));
-
-  const { linePath, areaPath } = buildBezierPath(pts, LTOP_PAD + LPLOT_H);
+  const { linePath, areaPath } = buildBezierPath(points, LTOP_PAD + LPLOT_H);
 
   return (
-    <Svg width={SVG_W} height={LINE_H}>
+    <Svg width={svgWidth} height={LINE_H}>
       <Defs>
         <SvgGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor={C.orange} stopOpacity={0.22} />
-          <Stop offset="1" stopColor={C.orange} stopOpacity={0.02} />
+          <Stop offset="0" stopColor={colors.orange} stopOpacity={0.22} />
+          <Stop offset="1" stopColor={colors.orange} stopOpacity={0.02} />
         </SvgGradient>
       </Defs>
 
-      {/* Y axis % label */}
       <SvgText
-        x={LY_AXIS_W - 4} y={LTOP_PAD + 4}
-        textAnchor="end" fontSize={10} fill={C.axisTick}
+        x={LY_AXIS_W - 4}
+        y={LTOP_PAD + 4}
+        textAnchor="end"
+        fontSize={10}
+        fill={colors.axisTick}
       >
         100%
       </SvgText>
 
-      {/* Area fill */}
       <Path d={areaPath} fill="url(#areaFill)" />
-      {/* Line */}
-      <Path d={linePath} stroke={C.orange} strokeWidth={2.5} fill="none" strokeLinecap="round" />
+      <Path d={linePath} stroke={colors.orange} strokeWidth={2.5} fill="none" strokeLinecap="round" />
 
-      {/* Dots */}
-      {pts.map((pt, i) => {
-        const isAct = i === activeIdx;
-        const item = config.items[i];
+      {points.map((point, index) => {
+        const isActive = index === activeIdx;
+        const item = config.items[index];
         return (
-          <G key={i}>
-            {isAct ? (
+          <G key={index}>
+            {isActive ? (
               <>
-                <Circle cx={pt.x} cy={pt.y} r={20} fill={C.orange} opacity={0.12} />
-                <Circle cx={pt.x} cy={pt.y} r={8} fill={C.orange} />
-                {/* Badge */}
+                <Circle cx={point.x} cy={point.y} r={20} fill={colors.orange} opacity={0.12} />
+                <Circle cx={point.x} cy={point.y} r={8} fill={colors.orange} />
                 <Rect
-                  x={pt.x - 26} y={pt.y - 46}
-                  width={52} height={26}
-                  rx={13} ry={13}
-                  fill={C.orange}
+                  x={point.x - 26}
+                  y={point.y - 46}
+                  width={52}
+                  height={26}
+                  rx={13}
+                  ry={13}
+                  fill={colors.orange}
                 />
                 <SvgText
-                  x={pt.x} y={pt.y - 28}
-                  textAnchor="middle" fontSize={12} fontWeight="700" fill="white"
+                  x={point.x}
+                  y={point.y - 28}
+                  textAnchor="middle"
+                  fontSize={12}
+                  fontWeight="700"
+                  fill={colors.white}
                 >
                   {item.val}%
                 </SvgText>
               </>
             ) : (
               <>
-                <Circle cx={pt.x} cy={pt.y} r={4} fill="white" />
-                <Circle cx={pt.x} cy={pt.y} r={4} fill="none" stroke={C.orangeLight} strokeWidth={2} />
+                <Circle cx={point.x} cy={point.y} r={4} fill={colors.surface} />
+                <Circle cx={point.x} cy={point.y} r={4} fill="none" stroke={colors.orangeLight} strokeWidth={2} />
               </>
             )}
-            {/* Transparent touch target */}
             <Rect
-              x={pt.x - 16} y={pt.y - 16}
-              width={32} height={32}
+              x={point.x - 16}
+              y={point.y - 16}
+              width={32}
+              height={32}
               fill="transparent"
-              onPress={() => onDotPress(i)}
+              onPress={() => onDotPress(index)}
             />
-            {/* X label */}
             <SvgText
-              x={pt.x} y={LTOP_PAD + LPLOT_H + LX_AXIS_H - 4}
-              textAnchor="middle" fontSize={N > 8 ? 9 : 11} fill={C.muted}
+              x={point.x}
+              y={LTOP_PAD + LPLOT_H + LX_AXIS_H - 4}
+              textAnchor="middle"
+              fontSize={itemCount > 8 ? 9 : 11}
+              fill={colors.muted}
             >
               {item.label}
             </SvgText>
@@ -312,10 +329,8 @@ function AreaChartSvg({ config, activeIdx, onDotPress }: {
   );
 }
 
-// ════════════════════════════════════════════════════════
-// ANA BİLEŞEN
-// ════════════════════════════════════════════════════════
 export default function ReportScreen() {
+  const styles = useThemedStyles();
   const [barPeriod, setBarPeriod] = useState('Bu Hafta');
   const [linePeriod, setLinePeriod] = useState('Son 6 Ay');
   const [activeBarIdx, setActiveBarIdx] = useState(BAR_DATA['Bu Hafta'].defaultIdx);
@@ -342,24 +357,22 @@ export default function ReportScreen() {
     }, [chartAnim])
   );
 
-  const handleBarPeriod = (v: string) => {
-    // Animasyonu sıfırla
+  const handleBarPeriod = (value: string) => {
     Animated.sequence([
       Animated.timing(barScaleAnim, { toValue: 0.95, duration: 100, useNativeDriver: true }),
-      Animated.timing(barScaleAnim, { toValue: 1, duration: 250, useNativeDriver: true })
+      Animated.timing(barScaleAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
     ]).start();
-    setBarPeriod(v);
-    setActiveBarIdx(BAR_DATA[v].defaultIdx);
+    setBarPeriod(value);
+    setActiveBarIdx(BAR_DATA[value].defaultIdx);
   };
 
-  const handleLinePeriod = (v: string) => {
-    // Animasyonu sıfırla
+  const handleLinePeriod = (value: string) => {
     Animated.sequence([
       Animated.timing(lineScaleAnim, { toValue: 0.95, duration: 100, useNativeDriver: true }),
-      Animated.timing(lineScaleAnim, { toValue: 1, duration: 250, useNativeDriver: true })
+      Animated.timing(lineScaleAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
     ]).start();
-    setLinePeriod(v);
-    setActiveLineIdx(LINE_DATA[v].activeIdx);
+    setLinePeriod(value);
+    setActiveLineIdx(LINE_DATA[value].activeIdx);
   };
 
   const barConfig = BAR_DATA[barPeriod];
@@ -367,8 +380,6 @@ export default function ReportScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-
-      {/* ── Başlık ──────────────────────────────── */}
       <ScreenHeader title="Raporlar" subtitle="Haftalık ve aylık özet" />
 
       <ScrollView
@@ -376,18 +387,11 @@ export default function ReportScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-
         <View style={styles.statGrid}>
-          {STAT_CARDS.map((c, i) => (
-            <View
-              key={i}
-              style={[
-                styles.statCard,
-                { backgroundColor: i % 2 === 0 ? C.bg : C.bg },
-              ]}
-            >
-              <Text style={[styles.statValue, { color: c.accent }]}>{c.value}</Text>
-              <Text style={styles.statLabel}>{c.label}</Text>
+          {STAT_CARDS.map((card, index) => (
+            <View key={index} style={styles.statCard}>
+              <Text style={[styles.statValue, { color: card.accent }]}>{card.value}</Text>
+              <Text style={styles.statLabel}>{card.label}</Text>
             </View>
           ))}
         </View>
@@ -395,11 +399,7 @@ export default function ReportScreen() {
         <View style={styles.chartCard}>
           <View style={styles.chartHeader}>
             <Text style={styles.chartTitle}>Tamamlanan Alışkanlıklar</Text>
-            <Dropdown
-              options={['Bu Hafta', 'Bu Ay', 'Bu Yıl']}
-              value={barPeriod}
-              onChange={handleBarPeriod}
-            />
+            <Dropdown options={['Bu Hafta', 'Bu Ay', 'Bu Yıl']} value={barPeriod} onChange={handleBarPeriod} />
           </View>
           <Animated.ScrollView
             horizontal
@@ -418,8 +418,8 @@ export default function ReportScreen() {
         <Animated.View
           style={[
             styles.chartCard,
-            { marginBottom: 24 },
             {
+              marginBottom: 24,
               opacity: chartAnim,
               transform: [{
                 scale: chartAnim.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] }),
@@ -443,49 +443,64 @@ export default function ReportScreen() {
             <AreaChartSvg config={lineConfig} activeIdx={activeLineIdx} onDotPress={setActiveLineIdx} />
           </Animated.ScrollView>
         </Animated.View>
-
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// ── Stiller ────────────────────────────────────────────
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: C.bg },
-
-  scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 4 },
-
-  // Özet kartlar
-  statGrid: {
-    flexDirection: 'row', flexWrap: 'wrap',
-    gap: 8, marginBottom: 14,
-  },
-  statCard: {
-    width: (W - 40) / 2,
-    borderRadius: 14, padding: 12,
-    borderWidth: 1, borderColor: C.border,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 },
-      android: { elevation: 2 },
-    }),
-  },
-  statValue: { fontSize: 18, fontWeight: '800', lineHeight: 24 },
-  statLabel: { fontSize: 11, color: C.muted, marginTop: 2 },
-
-  // Grafik kartı
-  chartCard: {
-    backgroundColor: C.bg, borderRadius: 20,
-    padding: 18, marginBottom: 16,
-    borderWidth: 1, borderColor: C.border,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
-      android: { elevation: 3 },
-    }),
-  },
-  chartHeader: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 16,
-  },
-  chartTitle: { fontSize: 16, fontWeight: '700', color: C.text },
-});
+function createStyles(colors: AppColors, isDark: boolean) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.bg },
+    scroll: { flex: 1 },
+    scrollContent: { paddingHorizontal: 16, paddingTop: 4 },
+    statGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginBottom: 14,
+    },
+    statCard: {
+      width: (W - 40) / 2,
+      borderRadius: 14,
+      padding: 12,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...Platform.select({
+        ios: {
+          shadowColor: colors.shadowSoft,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0.24 : 0.05,
+          shadowRadius: 8,
+        },
+        android: { elevation: 2 },
+      }),
+    },
+    statValue: { fontSize: 18, fontWeight: '800', lineHeight: 24 },
+    statLabel: { fontSize: 11, color: colors.muted, marginTop: 2 },
+    chartCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 18,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...Platform.select({
+        ios: {
+          shadowColor: colors.shadowSoft,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0.24 : 0.05,
+          shadowRadius: 10,
+        },
+        android: { elevation: 3 },
+      }),
+    },
+    chartHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 16,
+    },
+    chartTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+  });
+}

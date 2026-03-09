@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet, Platform } from 'react-native';
-import { C } from '../constants/colors';
+import { useAppColors, useIsDark, type AppColors } from '../constants/colors';
 
 interface DropdownProps {
   options: string[];
@@ -10,6 +10,9 @@ interface DropdownProps {
 
 export default function Dropdown({ options, value, onChange }: DropdownProps) {
   const [open, setOpen] = useState(false);
+  const colors = useAppColors();
+  const isDark = useIsDark();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   return (
     <View>
       <TouchableOpacity
@@ -37,7 +40,7 @@ export default function Dropdown({ options, value, onChange }: DropdownProps) {
             >
               <Text style={[
                 styles.itemText,
-                opt === value && { color: C.orange, fontWeight: '700' },
+                opt === value && { color: colors.orange, fontWeight: '700' },
               ]}>
                 {opt}
               </Text>
@@ -49,40 +52,42 @@ export default function Dropdown({ options, value, onChange }: DropdownProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  btn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: C.bg,
-    borderWidth: 1.5,
-    borderColor: C.border,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  btnText: { fontSize: 13, fontWeight: '600', color: C.text },
-  menu: {
-    position: 'absolute',
-    bottom: 80,
-    right: 16,
-    backgroundColor: C.bg,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: C.border,
-    minWidth: 160,
-    overflow: 'hidden',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.1,
-        shadowRadius: 16,
-      },
-      android: { elevation: 8 },
-    }),
-  },
-  item: { paddingHorizontal: 16, paddingVertical: 10 },
-  itemActive: { backgroundColor: C.orangeBg },
-  itemText: { fontSize: 13, color: C.text },
-});
+function createStyles(colors: AppColors, isDark: boolean) {
+  return StyleSheet.create({
+    btn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: colors.surface,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      borderRadius: 20,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+    },
+    btnText: { fontSize: 13, fontWeight: '600', color: colors.text },
+    menu: {
+      position: 'absolute',
+      bottom: 80,
+      right: 16,
+      backgroundColor: colors.surfaceElevated,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      minWidth: 160,
+      overflow: 'hidden',
+      ...Platform.select({
+        ios: {
+          shadowColor: colors.shadow,
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: isDark ? 0.28 : 0.1,
+          shadowRadius: 16,
+        },
+        android: { elevation: 8 },
+      }),
+    },
+    item: { paddingHorizontal: 16, paddingVertical: 10 },
+    itemActive: { backgroundColor: colors.orangeBg },
+    itemText: { fontSize: 13, color: colors.text },
+  });
+}

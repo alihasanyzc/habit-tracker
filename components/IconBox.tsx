@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { getThemedAccentSurface, useAppColors, useIsDark } from '../constants/colors';
 
 interface IconBoxProps {
   icon: string;
@@ -21,6 +22,13 @@ export default function IconBox({
   bgColor,
   opacity = 1,
 }: IconBoxProps) {
+  const colors = useAppColors();
+  const isDark = useIsDark();
+  const resolvedBgColor = useMemo(
+    () => getThemedAccentSurface(bgColor, colors, isDark, 0.7),
+    [bgColor, colors, isDark]
+  );
+
   return (
     <View
       style={[
@@ -29,7 +37,7 @@ export default function IconBox({
           width: size,
           height: size,
           borderRadius,
-          backgroundColor: bgColor,
+          backgroundColor: resolvedBgColor,
           opacity,
         },
       ]}

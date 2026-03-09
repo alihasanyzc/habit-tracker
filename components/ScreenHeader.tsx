@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useAppColors } from '../constants/colors';
 
 interface ScreenHeaderProps {
   title: string;
@@ -12,14 +13,16 @@ interface ScreenHeaderProps {
 export default function ScreenHeader({
   title,
   subtitle,
-  textColor = '#1F1F1F',
-  mutedColor = '#7A7A7A',
+  textColor,
+  mutedColor,
 }: ScreenHeaderProps) {
+  const colors = useAppColors();
+
   return (
     <View style={styles.header}>
       <View>
-        <Text style={[styles.title, { color: textColor }]}>{title}</Text>
-        {subtitle ? <Text style={[styles.subtitle, { color: mutedColor }]}>{subtitle}</Text> : null}
+        <Text style={[styles.title, { color: textColor ?? colors.text }]}>{title}</Text>
+        {subtitle ? <Text style={[styles.subtitle, { color: mutedColor ?? colors.muted }]}>{subtitle}</Text> : null}
       </View>
     </View>
   );

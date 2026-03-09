@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { C } from '../constants/colors';
+import { useAppColors, useIsDark, type AppColors } from '../constants/colors';
 
 type ToastType = 'success' | 'error' | 'info';
 
@@ -44,17 +44,11 @@ interface ToastItem {
 const DEFAULT_DURATION = 2800;
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-const TOAST_META: Record<
-  ToastType,
-  { icon: React.ComponentProps<typeof MaterialCommunityIcons>['name']; tint: string; softBg: string }
-> = {
-  success: { icon: 'check-circle', tint: C.green, softBg: '#EEF7DF' },
-  error: { icon: 'alert-circle', tint: C.red, softBg: C.redLight },
-  info: { icon: 'bell-circle', tint: C.orange, softBg: C.orangeBg },
-};
-
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const insets = useSafeAreaInsets();
+  const colors = useAppColors();
+  const isDark = useIsDark();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const [currentToast, setCurrentToast] = useState<ToastItem | null>(null);
   const queueRef = useRef<ToastItem[]>([]);
   const activeToastRef = useRef<ToastItem | null>(null);
@@ -171,7 +165,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 }
 
 function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => void }) {
-  const meta = TOAST_META[toast.type];
+  const colors = useAppColors();
+  const isDark = useIsDark();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const meta = getToastMeta(colors)[toast.type];
 
   return (
     <Pressable style={styles.toastCard} onPress={onDismiss}>
@@ -184,7 +181,7 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => vo
         {toast.message ? <Text style={styles.message}>{toast.message}</Text> : null}
       </View>
 
-      <MaterialCommunityIcons name="close" size={18} color={C.muted} />
+      <MaterialCommunityIcons name="close" size={18} color={colors.muted} />
     </Pressable>
   );
 }
@@ -199,60 +196,73 @@ export function useToast() {
   return context;
 }
 
-const styles = StyleSheet.create({
-  appShell: {
-    flex: 1,
-  },
-  viewport: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 1000,
-  },
-  toastWrap: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-  },
-  toastCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    borderRadius: 22,
-    backgroundColor: C.white,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    borderWidth: 1,
-    borderColor: '#F0E3D8',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#4D2A00',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.12,
-        shadowRadius: 24,
-      },
-      android: {
-        elevation: 10,
-      },
-    }),
-  },
-  iconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  copyWrap: {
-    flex: 1,
-    gap: 2,
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: C.text,
-  },
-  message: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: C.muted,
-  },
-});
+function getToastMeta(colors: AppColors): Record<
+  ToastType,
+  { icon: React.ComponentProps<typeof MaterialCommunityIcons>['name']; tint: string; softBg: string }
+> {
+  return {
+    success: { icon: 'check-circle', tint: colors.green, softBg: colors.softSuccessBg },
+    error: { icon: 'alert-circle', tint: colors.red, softBg: colors.softErrorBg },
+    info: { icon: 'bell-circle', tint: colors.orange, softBg: colors.softInfoBg },
+  };
+}
+
+function createStyles(colors: AppColors, isDark: boolean) {
+  return StyleSheet.create({
+    appShell: {
+      flex: 1,
+    },
+    viewport: {
+      ...StyleSheet.absoluteFillObject,
+      zIndex: 1000,
+    },
+    toastWrap: {
+      position: 'absolute',
+      left: 16,
+      right: 16,
+    },
+    toastCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      borderRadius: 22,
+      backgroundColor: colors.surfaceElevated,
+      paddingHorizontal: 14,
+      paddingVertical: 13,
+      borderWidth: 1,
+      borderColor: colors.toastBorder,
+      ...Platform.select({
+        ios: {
+          shadowColor: colors.shadow,
+          shadowOffset: { width: 0, height: 12 },
+          shadowOpacity: isDark ? 0.28 : 0.12,
+          shadowRadius: 24,
+        },
+        android: {
+          elevation: 10,
+        },
+      }),
+    },
+    iconWrap: {
+      width: 38,
+      height: 38,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    copyWrap: {
+      flex: 1,
+      gap: 2,
+    },
+    title: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    message: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.muted,
+    },
+  });
+}

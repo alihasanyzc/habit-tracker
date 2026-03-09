@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, Dimensions, FlatList, Platform, Switch,
@@ -9,7 +9,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenHeader from '../components/ScreenHeader';
 import BottomSheet from '../components/BottomSheet';
 import PillTabs from '../components/PillTabs';
-import { C } from '../constants/colors';
+import { useAppColors, useIsDark, type AppColors } from '../constants/colors';
 import { HabitCard } from './HomeScreen';
 import { useToast } from '../components/ToastProvider';
 
@@ -63,6 +63,12 @@ function formatDate(d: Date) {
   return `${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+function useThemedStyles() {
+  const colors = useAppColors();
+  const isDark = useIsDark();
+  return useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+}
+
 // ════════════════════════════════════════════════════════
 // TAKVİM BOTTOM SHEET
 // ════════════════════════════════════════════════════════
@@ -72,6 +78,8 @@ function CalendarSheet({ visible, selectedDate, onConfirm, onCancel }: {
   onConfirm: (d: Date) => void;
   onCancel: () => void;
 }) {
+  const colors = useAppColors();
+  const styles = useThemedStyles();
   const [viewDate, setViewDate] = useState(new Date(selectedDate));
   const [pickedDate, setPickedDate] = useState(new Date(selectedDate));
 
@@ -154,10 +162,10 @@ function CalendarSheet({ visible, selectedDate, onConfirm, onCancel }: {
         {/* Butonlar */}
         <View style={[styles.sheetBtnRow, { paddingHorizontal: 20 }]}>
           <TouchableOpacity
-            style={[styles.cancelBtn, { backgroundColor: C.purpleLight, flex: 1 }]}
+            style={[styles.cancelBtn, { backgroundColor: colors.purpleLight, flex: 1 }]}
             onPress={onCancel} activeOpacity={0.8}
           >
-            <Text style={[styles.cancelBtnText, { color: C.purple }]}>İptal</Text>
+            <Text style={[styles.cancelBtnText, { color: colors.purple }]}>İptal</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={{ flex: 1 }}
@@ -187,6 +195,8 @@ function IconPickerSheet({ visible, selectedIcon, onSelect, onCancel }: {
   onSelect: (icon: IconName) => void;
   onCancel: () => void;
 }) {
+  const colors = useAppColors();
+  const styles = useThemedStyles();
   const [tab, setTab] = useState<'activity' | 'lifestyle'>('activity');
   const list = tab === 'activity' ? ICONS_ACTIVITY : ICONS_LIFESTYLE;
 
@@ -200,7 +210,7 @@ function IconPickerSheet({ visible, selectedIcon, onSelect, onCancel }: {
             style={styles.iconSheetClose}
             activeOpacity={0.7}
           >
-            <MaterialCommunityIcons name="close" size={18} color={C.muted} />
+            <MaterialCommunityIcons name="close" size={18} color={colors.muted} />
           </TouchableOpacity>
         </View>
 
@@ -225,13 +235,13 @@ function IconPickerSheet({ visible, selectedIcon, onSelect, onCancel }: {
                 activeOpacity={0.7}
                 style={[
                   styles.iconCell,
-                  { backgroundColor: isSelected ? C.orange : C.tabBg },
+                  { backgroundColor: isSelected ? colors.orange : colors.tabBg },
                 ]}
               >
                 <MaterialCommunityIcons
                   name={item}
                   size={28}
-                  color={isSelected ? '#fff' : C.text}
+                  color={isSelected ? colors.white : colors.text}
                 />
               </TouchableOpacity>
             );
@@ -264,6 +274,8 @@ function SpectrumPicker({ onColorChange, onBack }: {
   onColorChange: (c: string) => void;
   onBack: () => void;
 }) {
+  const colors = useAppColors();
+  const styles = useThemedStyles();
   const [pickedColor, setPickedColor] = useState('#FF8A1F');
   const [cursorX, setCursorX] = useState(SPECTRUM_SIZE / 2);
   const [cursorY, setCursorY] = useState(SPECTRUM_SIZE / 3);
@@ -293,7 +305,7 @@ function SpectrumPicker({ onColorChange, onBack }: {
         activeOpacity={0.7}
         style={styles.spectrumBackBtn}
       >
-        <MaterialCommunityIcons name="arrow-left" size={18} color={C.text} />
+        <MaterialCommunityIcons name="arrow-left" size={18} color={colors.text} />
         <Text style={styles.spectrumBackText}>Palette</Text>
       </TouchableOpacity>
 
@@ -343,6 +355,8 @@ function ColorPickerSheet({ visible, selectedColor, onSelect, onCancel }: {
   onSelect: (c: string) => void;
   onCancel: () => void;
 }) {
+  const colors = useAppColors();
+  const styles = useThemedStyles();
   const [showSpectrum, setShowSpectrum] = useState(false);
 
   if (!visible) return null;
@@ -359,7 +373,7 @@ function ColorPickerSheet({ visible, selectedColor, onSelect, onCancel }: {
           <View style={styles.iconSheetHeader}>
             <Text style={styles.sheetTitle}>Renk Seç</Text>
             <TouchableOpacity onPress={dismiss} style={styles.iconSheetClose} activeOpacity={0.7}>
-              <MaterialCommunityIcons name="close" size={18} color={C.muted} />
+              <MaterialCommunityIcons name="close" size={18} color={colors.muted} />
             </TouchableOpacity>
           </View>
         )}
@@ -383,7 +397,7 @@ function ColorPickerSheet({ visible, selectedColor, onSelect, onCancel }: {
                   <View style={[
                     styles.cpCircle,
                     { backgroundColor: color },
-                    picked && { borderWidth: 3, borderColor: C.text },
+                    picked && { borderWidth: 3, borderColor: colors.text },
                   ]} />
                 </TouchableOpacity>
               );
@@ -412,6 +426,8 @@ function ColorPickerSheet({ visible, selectedColor, onSelect, onCancel }: {
 // ANA BİLEŞEN
 // ════════════════════════════════════════════════════════
 export default function CreateScreen() {
+  const colors = useAppColors();
+  const styles = useThemedStyles();
   const { showToast } = useToast();
   const [taskName, setTaskName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState<IconName>('medal');
@@ -485,7 +501,7 @@ export default function CreateScreen() {
             value={taskName}
             onChangeText={setTaskName}
             placeholder="Alışkanlık adı girin..."
-            placeholderTextColor={C.muted}
+            placeholderTextColor={colors.muted}
             style={styles.nameInput}
           />
         </View>
@@ -500,13 +516,13 @@ export default function CreateScreen() {
           >
             <View style={styles.cardRowLeft}>
               <View style={styles.rowIconWrap}>
-                <MaterialCommunityIcons name="emoticon-outline" size={18} color={C.orange} />
+                <MaterialCommunityIcons name="emoticon-outline" size={18} color={colors.orange} />
               </View>
               <Text style={styles.cardRowLabel}>İkon</Text>
             </View>
             <View style={styles.cardRowRight}>
-              <MaterialCommunityIcons name={selectedIcon} size={22} color={C.text} />
-              <MaterialCommunityIcons name="chevron-right" size={20} color={C.muted} />
+              <MaterialCommunityIcons name={selectedIcon} size={22} color={colors.text} />
+              <MaterialCommunityIcons name="chevron-right" size={20} color={colors.muted} />
             </View>
           </TouchableOpacity>
 
@@ -519,13 +535,13 @@ export default function CreateScreen() {
           >
             <View style={styles.cardRowLeft}>
               <View style={styles.rowIconWrap}>
-                <MaterialCommunityIcons name="palette-outline" size={18} color={C.orange} />
+                <MaterialCommunityIcons name="palette-outline" size={18} color={colors.orange} />
               </View>
               <Text style={styles.cardRowLabel}>Renk</Text>
             </View>
             <View style={styles.cardRowRight}>
               <View style={[styles.colorDot, { backgroundColor: selectedColor }]} />
-              <MaterialCommunityIcons name="chevron-right" size={20} color={C.muted} />
+              <MaterialCommunityIcons name="chevron-right" size={20} color={colors.muted} />
             </View>
           </TouchableOpacity>
         </View>
@@ -534,12 +550,12 @@ export default function CreateScreen() {
         <View style={styles.sectionLabelRow}>
           <Text style={styles.sectionLabel}>Ne Zaman</Text>
           <View style={styles.noEndDateInline}>
-            <Text style={[styles.noEndDateText, noEndDate && { color: C.orange }]}>Süresiz</Text>
+            <Text style={[styles.noEndDateText, noEndDate && { color: colors.orange }]}>Süresiz</Text>
             <Switch
               value={noEndDate}
               onValueChange={setNoEndDate}
-              trackColor={{ false: C.border, true: C.orange }}
-              thumbColor="#fff"
+              trackColor={{ false: colors.border, true: colors.orange }}
+              thumbColor={colors.white}
               style={{ transform: [{ scaleX: 0.75 }, { scaleY: 0.75 }] }}
             />
           </View>
@@ -554,13 +570,13 @@ export default function CreateScreen() {
           >
             <View style={styles.cardRowLeft}>
               <View style={styles.rowIconWrap}>
-                <MaterialCommunityIcons name="calendar-start-outline" size={18} color={C.orange} />
+                <MaterialCommunityIcons name="calendar-start-outline" size={18} color={colors.orange} />
               </View>
               <Text style={styles.cardRowLabel}>Başlangıç</Text>
             </View>
             <View style={styles.cardRowRight}>
               <Text style={styles.cardRowValue}>{formatDate(startDate)}</Text>
-              <MaterialCommunityIcons name="chevron-right" size={20} color={C.muted} />
+              <MaterialCommunityIcons name="chevron-right" size={20} color={colors.muted} />
             </View>
           </TouchableOpacity>
 
@@ -575,13 +591,13 @@ export default function CreateScreen() {
               >
                 <View style={styles.cardRowLeft}>
                   <View style={styles.rowIconWrap}>
-                    <MaterialCommunityIcons name="calendar-end-outline" size={18} color={C.red} />
+                    <MaterialCommunityIcons name="calendar-end-outline" size={18} color={colors.red} />
                   </View>
                   <Text style={styles.cardRowLabel}>Bitiş</Text>
                 </View>
                 <View style={styles.cardRowRight}>
                   <Text style={styles.cardRowValue}>{formatDate(endDate)}</Text>
-                  <MaterialCommunityIcons name="chevron-right" size={20} color={C.muted} />
+                  <MaterialCommunityIcons name="chevron-right" size={20} color={colors.muted} />
                 </View>
               </TouchableOpacity>
             </>
@@ -632,203 +648,241 @@ export default function CreateScreen() {
   );
 }
 
-// ── Stiller ────────────────────────────────────────────
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: C.bg },
-
-
-  scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 24 },
-
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: C.muted,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    marginBottom: 10,
-    marginLeft: 4,
-  },
-
-  sectionLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  noEndDateInline: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  noEndDateText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: C.muted,
-  },
-
-  // Kart container
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    marginBottom: 28,
-    overflow: 'hidden',
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 },
-      android: { elevation: 3 },
-    }),
-  },
-
-  // Kart satırı
-  cardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    justifyContent: 'space-between',
-  },
-  cardRowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  cardRowRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  rowIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: '#FFF4E8',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardRowLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: C.text,
-  },
-  cardRowValue: {
-    fontSize: 14,
-    color: C.muted,
-  },
-  cardDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: C.border,
-    marginLeft: 60,
-  },
-  colorDot: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
-  },
-
-  // Görev adı input
-  nameInput: {
-    fontSize: 15, color: C.text,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-
-  // Renk seçici modal grid
-  cpGrid: {
-    flexDirection: 'row', flexWrap: 'wrap',
-    justifyContent: 'center',
-    paddingHorizontal: 16, paddingBottom: 8,
-    gap: 12,
-  },
-  cpCellWrap: {
-    alignItems: 'center', justifyContent: 'center',
-  },
-  cpCircle: {
-    width: 48, height: 48, borderRadius: 24,
-  },
-
-  // Spektrum
-  spectrumWrap: {
-    alignItems: 'center', paddingHorizontal: 20, paddingBottom: 16,
-  },
-  spectrumBackBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    marginBottom: 8,
-  },
-  spectrumBackText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: C.text,
-  },
-  spectrumBox: {
-    borderRadius: 16, overflow: 'hidden',
-  },
-  spectrumCursor: {
-    position: 'absolute',
-    width: CURSOR_SIZE, height: CURSOR_SIZE, borderRadius: CURSOR_SIZE / 2,
-    borderWidth: 3, borderColor: '#FFFFFF',
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4 },
-      android: { elevation: 6 },
-    }),
-  },
-
-  // Kaydet
-  saveWrap: { paddingHorizontal: 40, paddingBottom: 32, paddingTop: 8 },
-  saveBtn: { borderRadius: 16, paddingVertical: 14, alignItems: 'center' },
-  saveBtnText: { fontSize: 16, fontWeight: '700', color: '#fff', letterSpacing: 0.3 },
-
-  sheetBtnRow: { flexDirection: 'row', gap: 12 },
-  cancelBtn: {
-    flex: 1, borderRadius: 14, paddingVertical: 15,
-    backgroundColor: '#F4F4F4', alignItems: 'center',
-  },
-  cancelBtnText: { fontSize: 15, fontWeight: '600', color: C.text },
-
-  // Takvim
-  sheetTitle: {
-    fontSize: 18, fontWeight: '700', color: C.text,
-    textAlign: 'center', paddingTop: 16, paddingBottom: 4,
-  },
-  calBox: {
-    margin: 20, backgroundColor: C.calBg,
-    borderRadius: 18, padding: 16,
-  },
-  calNavRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
-  calNavBtn: { paddingHorizontal: 10, paddingVertical: 4 },
-  calNavArrow: { fontSize: 22, color: C.text },
-  calMonthLabel: { fontSize: 16, fontWeight: '700', color: C.text },
-  calDayRow: { flexDirection: 'row', marginBottom: 6 },
-  calDayLabel: { flex: 1, textAlign: 'center', fontSize: 13, fontWeight: '600', color: '#9A9A9A', paddingBottom: 6 },
-  calGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-  calCell: {
-    width: `${100 / 7}%` as any,
-    aspectRatio: 1,
-    alignItems: 'center', justifyContent: 'center',
-    borderRadius: 100,
-  },
-  calCellPicked: { backgroundColor: C.purple },
-  calCellText: { fontSize: 14, fontWeight: '500', color: C.text },
-  calCellMuted: { color: '#D0D0D0' },
-  calCellTextPicked: { color: '#fff', fontWeight: '700' },
-
-  // Icon picker
-  iconSheetHeader: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12,
-  },
-  iconSheetClose: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: '#F4F4F4', alignItems: 'center', justifyContent: 'center',
-  },
-  iconCell: {
-    flex: 1, aspectRatio: 1, margin: 4, borderRadius: 16,
-    alignItems: 'center', justifyContent: 'center',
-  },
-});
+function createStyles(colors: AppColors, isDark: boolean) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: colors.bg },
+    scroll: { flex: 1 },
+    scrollContent: { paddingHorizontal: 20, paddingTop: 24 },
+    sectionLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.muted,
+      letterSpacing: 0.8,
+      textTransform: 'uppercase',
+      marginBottom: 10,
+      marginLeft: 4,
+    },
+    sectionLabelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 10,
+    },
+    noEndDateInline: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    noEndDateText: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.muted,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      marginBottom: 28,
+      overflow: 'hidden',
+      borderWidth: isDark ? 1 : 0,
+      borderColor: colors.border,
+      ...Platform.select({
+        ios: {
+          shadowColor: colors.shadowSoft,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0.24 : 0.06,
+          shadowRadius: 8,
+        },
+        android: { elevation: 3 },
+      }),
+    },
+    cardRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      justifyContent: 'space-between',
+    },
+    cardRowLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    cardRowRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    rowIconWrap: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      backgroundColor: colors.orangeBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cardRowLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    cardRowValue: {
+      fontSize: 14,
+      color: colors.muted,
+    },
+    cardDivider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: colors.border,
+      marginLeft: 60,
+    },
+    colorDot: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    nameInput: {
+      fontSize: 15,
+      color: colors.text,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+    },
+    cpGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      paddingHorizontal: 16,
+      paddingBottom: 8,
+      gap: 12,
+    },
+    cpCellWrap: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    cpCircle: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+    },
+    spectrumWrap: {
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingBottom: 16,
+    },
+    spectrumBackBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      gap: 6,
+      paddingVertical: 8,
+      paddingHorizontal: 4,
+      marginBottom: 8,
+    },
+    spectrumBackText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    spectrumBox: {
+      borderRadius: 16,
+      overflow: 'hidden',
+    },
+    spectrumCursor: {
+      position: 'absolute',
+      width: CURSOR_SIZE,
+      height: CURSOR_SIZE,
+      borderRadius: CURSOR_SIZE / 2,
+      borderWidth: 3,
+      borderColor: colors.white,
+      ...Platform.select({
+        ios: {
+          shadowColor: colors.shadowSoft,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0.28 : 0.3,
+          shadowRadius: 4,
+        },
+        android: { elevation: 6 },
+      }),
+    },
+    saveWrap: { paddingHorizontal: 40, paddingBottom: 32, paddingTop: 8 },
+    saveBtn: { borderRadius: 16, paddingVertical: 14, alignItems: 'center' },
+    saveBtnText: { fontSize: 16, fontWeight: '700', color: colors.white, letterSpacing: 0.3 },
+    sheetBtnRow: { flexDirection: 'row', gap: 12 },
+    cancelBtn: {
+      flex: 1,
+      borderRadius: 14,
+      paddingVertical: 15,
+      backgroundColor: colors.surfaceAlt,
+      alignItems: 'center',
+    },
+    cancelBtnText: { fontSize: 15, fontWeight: '600', color: colors.text },
+    sheetTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      textAlign: 'center',
+      paddingTop: 16,
+      paddingBottom: 4,
+    },
+    calBox: {
+      margin: 20,
+      backgroundColor: colors.calBg,
+      borderRadius: 18,
+      padding: 16,
+    },
+    calNavRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 14,
+    },
+    calNavBtn: { paddingHorizontal: 10, paddingVertical: 4 },
+    calNavArrow: { fontSize: 22, color: colors.text },
+    calMonthLabel: { fontSize: 16, fontWeight: '700', color: colors.text },
+    calDayRow: { flexDirection: 'row', marginBottom: 6 },
+    calDayLabel: {
+      flex: 1,
+      textAlign: 'center',
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.chevron,
+      paddingBottom: 6,
+    },
+    calGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+    calCell: {
+      width: `${100 / 7}%` as any,
+      aspectRatio: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: 100,
+    },
+    calCellPicked: { backgroundColor: colors.purple },
+    calCellText: { fontSize: 14, fontWeight: '500', color: colors.text },
+    calCellMuted: { color: colors.chevron },
+    calCellTextPicked: { color: colors.white, fontWeight: '700' },
+    iconSheetHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 12,
+    },
+    iconSheetClose: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.surfaceAlt,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    iconCell: {
+      flex: 1,
+      aspectRatio: 1,
+      margin: 4,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  });
+}
