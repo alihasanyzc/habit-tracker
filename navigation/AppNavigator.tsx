@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/HomeScreen';
 import StatsScreen from '../screens/StatsScreen';
 import CreateScreen from '../screens/CreateScreen';
-import ReportScreen from '../screens/ReportScreen';
+import HabitScreen from '../screens/HabitScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import { useAppColors, useIsDark, type AppColors } from '../constants/colors';
 
@@ -23,7 +23,7 @@ type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 const ICONS: Record<string, { active: IoniconsName; inactive: IoniconsName }> = {
   Home: { active: 'home', inactive: 'home-outline' },
   Stats: { active: 'stats-chart', inactive: 'stats-chart-outline' },
-  Report: { active: 'bar-chart', inactive: 'bar-chart-outline' },
+  Habit: { active: 'list', inactive: 'list-outline' },
   Profile: { active: 'person', inactive: 'person-outline' },
 };
 
@@ -60,7 +60,7 @@ function CustomTabBar({ state, navigation }: any) {
         const labels: Record<string, string> = {
           Home: 'Ana Sayfa',
           Stats: 'İstatistik',
-          Report: 'Rapor',
+          Habit: 'Alışkanlıklar',
           Profile: 'Profil',
         };
 
@@ -112,7 +112,7 @@ export default function AppNavigator() {
           <Tab.Screen name="Home" component={HomeScreen} />
           <Tab.Screen name="Stats" component={StatsScreen} />
           <Tab.Screen name="Create" component={CreateScreen} />
-          <Tab.Screen name="Report" component={ReportScreen} />
+          <Tab.Screen name="Habit" component={HabitScreen} />
           <Tab.Screen name="Profile" component={ProfileScreen} />
         </Tab.Navigator>
       </NavigationContainer>
