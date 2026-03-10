@@ -107,7 +107,7 @@ export default function AppNavigator() {
       <NavigationContainer theme={navigationTheme}>
         <Tab.Navigator
           tabBar={props => <CustomTabBar {...props} />}
-          screenOptions={{ headerShown: false }}
+          screenOptions={{ headerShown: false, animation: 'shift' }}
         >
           <Tab.Screen name="Home" component={HomeScreen} />
           <Tab.Screen name="Stats" component={StatsScreen} />

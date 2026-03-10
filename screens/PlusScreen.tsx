@@ -84,7 +84,7 @@ export default function PlusScreen({ onClose }: PlusScreenProps) {
           <View style={styles.heroIconWrap}>
             <MaterialCommunityIcons name="crown" size={36} color={colors.orange} />
           </View>
-          <Text style={styles.heroTitle}>Habit Tracker Plus</Text>
+          <Text style={styles.heroTitle}>Habition Plus</Text>
           <Text style={styles.heroSubtitle}>
             Alışkanlıklarını bir üst seviyeye taşı.{'\n'}Tüm premium özelliklerin kilidini aç.
           </Text>

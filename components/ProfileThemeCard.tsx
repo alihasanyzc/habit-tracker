@@ -1,7 +1,5 @@
 import React, { useMemo } from 'react';
-import {
-  View, Text, StyleSheet, Pressable, useWindowDimensions,
-} from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import {
   DARK_COLORS,
@@ -26,39 +24,12 @@ const THEME_OPTIONS: Array<{
 export default function ProfileThemeCard() {
   const colors = useAppColors();
   const isDark = useIsDark();
-  const { width } = useWindowDimensions();
   const { themePreference, resolvedScheme, setThemePreference } = useAppTheme();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
-  const isCompact = width < 380;
-  const activeThemeLabel = themePreference === 'system'
-    ? `Sistem (${resolvedScheme === 'dark' ? 'Koyu' : 'Açık'})`
-    : themePreference === 'dark'
-      ? 'Koyu'
-      : 'Açık';
 
   return (
-    <View style={styles.themeCard}>
-      <View style={styles.themeCardHeader}>
-        <View style={[styles.themeHero, { backgroundColor: colors.surfaceAlt }]}>
-          <View style={[styles.themeHeroOrb, styles.themeHeroSun]} />
-          <View style={[styles.themeHeroOrb, styles.themeHeroMoon, { backgroundColor: colors.bg }]} />
-        </View>
-
-        <View style={styles.themeCardCopy}>
-          <Text style={styles.themeCardTitle}>Uygulama Teması</Text>
-          <Text style={styles.themeCardSubtitle}>Şu an: {activeThemeLabel}</Text>
-        </View>
-
-        <View style={styles.activeBadge}>
-          <Text style={styles.activeBadgeText}>Aktif</Text>
-        </View>
-      </View>
-
-      <Text style={styles.themeHint}>
-        Tercihin hemen uygulanır. Sistem seçeneği cihaz ayarını takip eder.
-      </Text>
-
-      <View style={[styles.themeOptionsRow, isCompact && styles.themeOptionsRowCompact]}>
+    <View style={styles.card}>
+      <View style={styles.optionsRow}>
         {THEME_OPTIONS.map((option) => {
           const isSelected = option.value === themePreference;
           const previewColors = option.value === 'dark'
@@ -73,90 +44,48 @@ export default function ProfileThemeCard() {
             <Pressable
               key={option.value}
               accessibilityRole="button"
-              accessibilityLabel={`${option.label} tema seçeneği`}
-              accessibilityHint="Uygulama temasını değiştirir"
+              accessibilityLabel={`${option.label} tema`}
               accessibilityState={{ selected: isSelected }}
-              style={({ pressed }) => [
-                styles.themeOption,
-                isCompact && styles.themeOptionCompact,
-                isCompact && option.value === 'system' && styles.themeOptionCompactWide,
-                isSelected && styles.themeOptionSelected,
-                pressed && styles.themeOptionPressed,
+              style={[
+                styles.option,
+                isSelected && styles.optionSelected,
               ]}
-              onPress={() => {
-                void setThemePreference(option.value);
-              }}
+              onPress={() => void setThemePreference(option.value)}
             >
               <View
                 style={[
-                  styles.themePreview,
+                  styles.preview,
                   {
                     backgroundColor: previewColors.bg,
-                    borderColor: previewColors.border,
+                    borderColor: isSelected ? colors.orange : colors.border,
                   },
                 ]}
               >
-                <View
-                  style={[
-                    styles.themePreviewTopBar,
-                    { backgroundColor: previewColors.surface },
-                  ]}
-                >
-                  <View style={[styles.themePreviewDot, { backgroundColor: previewColors.orange }]} />
-                  <View style={[styles.themePreviewLine, { backgroundColor: previewColors.border }]} />
+                <View style={[styles.previewBar, { backgroundColor: previewColors.surface }]}>
+                  <View style={[styles.previewDot, { backgroundColor: previewColors.orange }]} />
+                  <View style={[styles.previewLine, { backgroundColor: previewColors.border }]} />
                 </View>
-
-                <View style={styles.themePreviewBody}>
-                  <View
-                    style={[
-                      styles.themePreviewCard,
-                      { backgroundColor: previewColors.surfaceElevated },
-                    ]}
-                  />
-                  <View
-                    style={[
-                      styles.themePreviewFooter,
-                      { backgroundColor: previewColors.surfaceAlt },
-                    ]}
-                  />
+                <View style={styles.previewBody}>
+                  <View style={[styles.previewCard, { backgroundColor: previewColors.surfaceElevated }]} />
+                  <View style={[styles.previewFooter, { backgroundColor: previewColors.surfaceAlt }]} />
                 </View>
-
-                {option.value === 'system' && (
-                  <View
-                    style={[
-                      styles.systemBadge,
-                      {
-                        backgroundColor: previewColors.surfaceElevated,
-                        borderColor: previewColors.border,
-                      },
-                    ]}
-                  >
-                    <Feather name="smartphone" size={10} color={previewColors.text} />
-                  </View>
-                )}
               </View>
 
-              <View style={styles.themeOptionFooter}>
+              <View style={styles.optionFooter}>
                 <Feather
                   name={option.icon}
-                  size={15}
+                  size={14}
                   color={isSelected ? colors.orange : colors.muted}
                 />
                 <Text
                   style={[
-                    styles.themeOptionLabel,
-                    isSelected && styles.themeOptionLabelSelected,
+                    styles.optionLabel,
+                    isSelected && styles.optionLabelSelected,
                   ]}
                 >
                   {option.label}
                 </Text>
               </View>
-
-              {isSelected && (
-                <View style={styles.selectedCheck}>
-                  <Feather name="check" size={12} color={colors.white} />
-                </View>
-              )}
             </Pressable>
           );
         })}
@@ -165,187 +94,79 @@ export default function ProfileThemeCard() {
   );
 }
 
-function createStyles(colors: AppColors, isDark: boolean) {
+function createStyles(colors: AppColors, _isDark: boolean) {
   return StyleSheet.create({
-    themeCard: {
+    card: {
       backgroundColor: colors.surface,
-      borderRadius: 28,
-      padding: 18,
+      borderRadius: 24,
+      padding: 6,
       borderWidth: 1,
       borderColor: colors.border,
-      shadowColor: colors.shadowSoft,
-      shadowOpacity: isDark ? 0.14 : 0.08,
-      shadowRadius: 18,
-      shadowOffset: { width: 0, height: 8 },
-      elevation: isDark ? 0 : 2,
     },
-    themeCardHeader: {
+    optionsRow: {
       flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 10,
+      gap: 6,
     },
-    themeHero: {
-      width: 50,
-      height: 50,
-      borderRadius: 18,
-      marginRight: 14,
-      alignItems: 'center',
-      justifyContent: 'center',
-      position: 'relative',
-      overflow: 'hidden',
-    },
-    themeHeroOrb: {
-      position: 'absolute',
-      borderRadius: 999,
-    },
-    themeHeroSun: {
-      width: 20,
-      height: 20,
-      backgroundColor: colors.orangeLight,
-      top: 11,
-      left: 10,
-    },
-    themeHeroMoon: {
-      width: 28,
-      height: 28,
-      bottom: 8,
-      right: 8,
-      borderWidth: 5,
-      borderColor: colors.orange,
-    },
-    themeCardCopy: {
+    option: {
       flex: 1,
-    },
-    themeCardTitle: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    themeCardSubtitle: {
-      fontSize: 13,
-      color: colors.muted,
-      marginTop: 3,
-    },
-    activeBadge: {
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      borderRadius: 999,
-      backgroundColor: colors.softInfoBg,
-    },
-    activeBadgeText: {
-      fontSize: 11,
-      fontWeight: '700',
-      color: colors.orangeDark,
-    },
-    themeHint: {
-      fontSize: 13,
-      lineHeight: 19,
-      color: colors.muted,
-      marginBottom: 16,
-    },
-    themeOptionsRow: {
-      flexDirection: 'row',
-      gap: 10,
-    },
-    themeOptionsRowCompact: {
-      flexWrap: 'wrap',
-    },
-    themeOption: {
-      flex: 1,
+      alignItems: 'center',
+      padding: 8,
       borderRadius: 20,
+      gap: 8,
+    },
+    optionSelected: {
       backgroundColor: colors.surfaceAlt,
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: 10,
-      position: 'relative',
     },
-    themeOptionCompact: {
-      minWidth: '48%',
-    },
-    themeOptionCompactWide: {
-      minWidth: '100%',
-    },
-    themeOptionSelected: {
-      backgroundColor: colors.softInfoBg,
-      borderColor: colors.orange,
-    },
-    themeOptionPressed: {
-      opacity: 0.88,
-    },
-    themePreview: {
-      height: 84,
-      borderRadius: 16,
+    preview: {
+      width: '100%',
+      height: 72,
+      borderRadius: 14,
       borderWidth: 1,
       overflow: 'hidden',
-      marginBottom: 10,
     },
-    themePreviewTopBar: {
-      height: 18,
-      paddingHorizontal: 8,
+    previewBar: {
+      height: 16,
+      paddingHorizontal: 6,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 5,
+      gap: 4,
     },
-    themePreviewDot: {
-      width: 6,
-      height: 6,
+    previewDot: {
+      width: 5,
+      height: 5,
       borderRadius: 3,
     },
-    themePreviewLine: {
-      width: 24,
-      height: 4,
+    previewLine: {
+      width: 20,
+      height: 3,
       borderRadius: 2,
     },
-    themePreviewBody: {
+    previewBody: {
       flex: 1,
-      padding: 8,
+      padding: 6,
       justifyContent: 'space-between',
     },
-    themePreviewCard: {
-      height: 32,
-      borderRadius: 10,
+    previewCard: {
+      height: 24,
+      borderRadius: 8,
     },
-    themePreviewFooter: {
-      height: 12,
-      width: '72%',
-      borderRadius: 6,
+    previewFooter: {
+      height: 10,
+      width: '70%',
+      borderRadius: 5,
     },
-    systemBadge: {
-      position: 'absolute',
-      right: 6,
-      bottom: 6,
-      width: 18,
-      height: 18,
-      borderRadius: 9,
-      borderWidth: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    themeOptionFooter: {
+    optionFooter: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
       gap: 5,
-      minHeight: 20,
     },
-    themeOptionLabel: {
-      fontSize: 14,
+    optionLabel: {
+      fontSize: 13,
       fontWeight: '600',
       color: colors.text,
     },
-    themeOptionLabelSelected: {
-      color: colors.orangeDark,
-    },
-    selectedCheck: {
-      position: 'absolute',
-      top: 8,
-      right: 8,
-      width: 20,
-      height: 20,
-      borderRadius: 10,
-      backgroundColor: colors.orange,
-      alignItems: 'center',
-      justifyContent: 'center',
+    optionLabelSelected: {
+      color: colors.orange,
     },
   });
 }
