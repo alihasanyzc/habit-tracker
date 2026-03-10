@@ -607,41 +607,29 @@ export default function CreateScreen() {
 
         {/* ── Görünüm (İkon & Renk) ─────────────────── */}
         <Text style={styles.sectionLabel}>Görünüm</Text>
-        <View style={styles.card}>
+        <View style={styles.appearanceRow}>
           <TouchableOpacity
-            style={styles.cardRow}
+            style={styles.appearanceCard}
             onPress={() => setShowIconPicker(true)}
             activeOpacity={0.7}
           >
-            <View style={styles.cardRowLeft}>
-              <View style={styles.rowIconWrap}>
-                <MaterialCommunityIcons name="emoticon-outline" size={18} color={colors.orange} />
-              </View>
-              <Text style={styles.cardRowLabel}>İkon</Text>
+            <View style={styles.rowIconWrap}>
+              <MaterialCommunityIcons name="emoticon-outline" size={18} color={colors.orange} />
             </View>
-            <View style={styles.cardRowRight}>
-              <MaterialCommunityIcons name={selectedIcon} size={22} color={colors.text} />
-              <MaterialCommunityIcons name="chevron-right" size={20} color={colors.muted} />
-            </View>
+            <Text style={styles.appearanceLabel}>İkon</Text>
+            <MaterialCommunityIcons name={selectedIcon} size={22} color={colors.text} />
           </TouchableOpacity>
 
-          <View style={styles.cardDivider} />
-
           <TouchableOpacity
-            style={styles.cardRow}
+            style={styles.appearanceCard}
             onPress={() => setShowColorPicker(true)}
             activeOpacity={0.7}
           >
-            <View style={styles.cardRowLeft}>
-              <View style={styles.rowIconWrap}>
-                <MaterialCommunityIcons name="palette-outline" size={18} color={colors.orange} />
-              </View>
-              <Text style={styles.cardRowLabel}>Renk</Text>
+            <View style={styles.rowIconWrap}>
+              <MaterialCommunityIcons name="palette-outline" size={18} color={colors.orange} />
             </View>
-            <View style={styles.cardRowRight}>
-              <View style={[styles.colorDot, { backgroundColor: selectedColor }]} />
-              <MaterialCommunityIcons name="chevron-right" size={20} color={colors.muted} />
-            </View>
+            <Text style={styles.appearanceLabel}>Renk</Text>
+            <View style={[styles.colorDot, { backgroundColor: selectedColor }]} />
           </TouchableOpacity>
         </View>
 
@@ -839,6 +827,38 @@ function createStyles(colors: AppColors, isDark: boolean) {
       borderRadius: 11,
       borderWidth: 1,
       borderColor: colors.border,
+    },
+    appearanceRow: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 28,
+    },
+    appearanceCard: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderWidth: isDark ? 1 : 0,
+      borderColor: colors.border,
+      ...Platform.select({
+        ios: {
+          shadowColor: colors.shadowSoft,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0.24 : 0.06,
+          shadowRadius: 8,
+        },
+        android: { elevation: 3 },
+      }),
+    },
+    appearanceLabel: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.text,
     },
     nameInput: {
       fontSize: 15,
