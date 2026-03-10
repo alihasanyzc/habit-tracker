@@ -740,7 +740,7 @@ export default function CreateScreen() {
       <ColorPickerSheet
         visible={showColorPicker}
         selectedColor={selectedColor}
-        onSelect={(c) => { setSelectedColor(c); }}
+        onSelect={(c) => { setSelectedColor(c); setShowColorPicker(false); }}
         onCancel={() => setShowColorPicker(false)}
       />
     </SafeAreaView>

@@ -284,7 +284,7 @@ export default function HomeScreen() {
 
 function createStyles(colors: AppColors, isDark: boolean) {
   return StyleSheet.create({
-    safe: { flex: 1, backgroundColor: colors.screen },
+    safe: { flex: 1, backgroundColor: colors.bg },
     scroll: { flex: 1, backgroundColor: colors.bg },
     scrollContent: { paddingTop: 12, paddingBottom: 16 },
 

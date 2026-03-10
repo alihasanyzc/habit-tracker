@@ -107,7 +107,11 @@ export default function AppNavigator() {
       <NavigationContainer theme={navigationTheme}>
         <Tab.Navigator
           tabBar={props => <CustomTabBar {...props} />}
-          screenOptions={{ headerShown: false, animation: 'shift' }}
+          screenOptions={{
+            headerShown: false,
+            animation: 'shift',
+            sceneStyle: { backgroundColor: colors.bg },
+          }}
         >
           <Tab.Screen name="Home" component={HomeScreen} />
           <Tab.Screen name="Stats" component={StatsScreen} />

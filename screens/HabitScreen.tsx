@@ -203,7 +203,7 @@ function createStyles(colors: AppColors, isDark: boolean) {
   return StyleSheet.create({
     root: {
       flex: 1,
-      backgroundColor: colors.screen,
+      backgroundColor: colors.bg,
     },
     header: {
       flexDirection: 'row',
@@ -212,7 +212,7 @@ function createStyles(colors: AppColors, isDark: boolean) {
       paddingHorizontal: 20,
       paddingTop: 16,
       paddingBottom: 12,
-      backgroundColor: colors.screen,
+      backgroundColor: colors.bg,
     },
     title: {
       fontSize: 24,
