@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, Dimensions, FlatList, Platform, Switch,
@@ -17,6 +17,7 @@ import type { Habit } from '../types/habit';
 import { addHabit } from '../utils/habitRepository';
 
 const SCREEN_H = Dimensions.get('window').height;
+const ICON_PICKER_GLYPH_SIZE = 20;
 
 // ── Icon listeleri (MaterialCommunityIcons) ──────────────
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
@@ -25,13 +26,23 @@ const ICONS_ACTIVITY: IconName[] = [
   'run', 'walk', 'bike', 'swim', 'yoga', 'dumbbell', 'basketball', 'soccer',
   'tennis', 'trophy', 'medal', 'target', 'rowing', 'ski', 'skateboarding', 'hiking',
   'golf', 'boxing-glove', 'karate', 'football', 'weight-lifter', 'fencing',
-  'handball', 'surfing',
+  'handball', 'surfing', 'run-fast', 'jump-rope', 'meditation', 'arm-flex',
+  'baseball', 'volleyball', 'rugby', 'badminton', 'table-tennis', 'sail-boat',
+  'ski-water', 'timer-outline', 'podium-gold', 'arch', 'bullseye-arrow', 'kayaking',
+  'baseball-bat', 'hockey-sticks', 'cricket', 'ski-cross-country', 'snowboard',
+  'tennis-ball', 'whistle', 'scoreboard-outline', 'target-variant', 'timer-sand',
+  'map-marker-distance', 'trophy-outline',
 ];
 const ICONS_LIFESTYLE: IconName[] = [
   'book-open-variant', 'music', 'leaf', 'lightbulb', 'brain', 'pencil', 'palette',
   'guitar-acoustic', 'food-apple', 'sleep', 'flower', 'water', 'silverware-fork-knife',
   'broom', 'note-text', 'flask', 'bullseye', 'cash', 'moon-waning-crescent',
-  'white-balance-sunny', 'handshake', 'heart', 'hands-pray',
+  'white-balance-sunny', 'handshake', 'heart', 'hands-pray', 'coffee-outline', 'tea',
+  'briefcase-outline', 'laptop', 'notebook-outline', 'camera-outline', 'microphone-outline',
+  'airballoon', 'carrot', 'pill', 'stethoscope', 'dog', 'cat', 'baby-face-outline',
+  'book-heart-outline', 'notebook-edit-outline', 'movie-open-outline', 'gamepad-variant-outline',
+  'headphones', 'food-croissant', 'hamburger', 'ice-cream', 'glass-cocktail',
+  'alarm', 'bed-outline', 'shoe-sneaker',
 ];
 
 // ── Renk listesi (Figma paleti) ────────────────────────
@@ -49,6 +60,7 @@ const MONTH_NAMES = [
   'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
 ];
 const DAY_LABELS = ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'];
+const DAY_NAMES = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
 
 // ── Seçilen rengi pastel arka plana dönüştür (HomeScreen pattern) ──
 function lightenColor(hex: string, mix = 0.82): string {
@@ -64,6 +76,12 @@ function lightenColor(hex: string, mix = 0.82): string {
 // ── Tarih formatlama ────────────────────────────────────
 function formatDate(d: Date) {
   return `${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function isSameDay(left: Date, right: Date) {
+  return left.getDate() === right.getDate()
+    && left.getMonth() === right.getMonth()
+    && left.getFullYear() === right.getFullYear();
 }
 
 function useThemedStyles() {
@@ -84,104 +102,130 @@ function CalendarSheet({ visible, selectedDate, onConfirm, onCancel }: {
   const colors = useAppColors();
   const styles = useThemedStyles();
   const [viewDate, setViewDate] = useState(new Date(selectedDate));
-  const [pickedDate, setPickedDate] = useState(new Date(selectedDate));
+
+  useEffect(() => {
+    if (!visible) return;
+    setViewDate(new Date(selectedDate));
+  }, [selectedDate, visible]);
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
+  const today = new Date();
 
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const prevMonthDays = new Date(year, month, 0).getDate();
 
-  const cells: { day: number; current: boolean }[] = [];
-  for (let i = 0; i < firstDay; i++)
-    cells.push({ day: prevMonthDays - firstDay + 1 + i, current: false });
-  for (let d = 1; d <= daysInMonth; d++)
-    cells.push({ day: d, current: true });
-  while (cells.length < 42)
-    cells.push({ day: cells.length - firstDay - daysInMonth + 1, current: false });
+  const cells: { date: Date; day: number; current: boolean }[] = [];
+  for (let i = 0; i < firstDay; i++) {
+    const day = prevMonthDays - firstDay + 1 + i;
+    cells.push({ date: new Date(year, month - 1, day), day, current: false });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ date: new Date(year, month, d), day: d, current: true });
+  }
+  while (cells.length < 42) {
+    const day = cells.length - firstDay - daysInMonth + 1;
+    cells.push({ date: new Date(year, month + 1, day), day, current: false });
+  }
 
-  const isPicked = (day: number, current: boolean) =>
-    current && pickedDate.getDate() === day &&
-    pickedDate.getMonth() === month && pickedDate.getFullYear() === year;
+  const isPicked = (date: Date) => isSameDay(selectedDate, date);
+
+  const isToday = (date: Date) => isSameDay(today, date);
 
   return (
-    <BottomSheet visible={visible} onClose={onCancel}>
-      <View style={{ paddingBottom: 32 }}>
-        {/* Takvim */}
-        <View style={[styles.calBox, { marginTop: 8 }]}>
-          {/* Ay navigasyonu */}
+    <BottomSheet visible={visible} onClose={onCancel} maxHeight={SCREEN_H * 0.58}>
+      <View style={styles.calendarSheetContent}>
+        <View style={styles.iconSheetHeader}>
+          <Text style={styles.sheetTitle}>Tarih Seç</Text>
+          <TouchableOpacity
+            onPress={onCancel}
+            style={styles.iconSheetClose}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons name="close" size={18} color={colors.muted} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.calBox}>
           <View style={styles.calNavRow}>
             <TouchableOpacity
               onPress={() => setViewDate(new Date(year, month - 1, 1))}
               style={styles.calNavBtn}
+              activeOpacity={0.8}
             >
-              <Text style={styles.calNavArrow}>‹</Text>
+              <MaterialCommunityIcons name="chevron-left" size={20} color={colors.orangeDark} />
             </TouchableOpacity>
-            <Text style={styles.calMonthLabel}>
-              {MONTH_NAMES[month]} {year}
-            </Text>
+            <View style={styles.calMonthBadge}>
+              <Text style={styles.calMonthLabel}>
+                {MONTH_NAMES[month]} {year}
+              </Text>
+            </View>
             <TouchableOpacity
               onPress={() => setViewDate(new Date(year, month + 1, 1))}
               style={styles.calNavBtn}
+              activeOpacity={0.8}
             >
-              <Text style={styles.calNavArrow}>›</Text>
+              <MaterialCommunityIcons name="chevron-right" size={20} color={colors.orangeDark} />
             </TouchableOpacity>
           </View>
 
-          {/* Gün etiketleri */}
           <View style={styles.calDayRow}>
             {DAY_LABELS.map(d => (
               <Text key={d} style={styles.calDayLabel}>{d}</Text>
             ))}
           </View>
 
-          {/* Hücreler */}
           <View style={styles.calGrid}>
             {cells.map((cell, idx) => {
-              const picked = isPicked(cell.day, cell.current);
+              const picked = isPicked(cell.date);
+              const todayCell = isToday(cell.date);
               return (
                 <TouchableOpacity
-                  key={idx}
+                  key={`${cell.date.toISOString()}-${idx}`}
                   onPress={() => {
-                    if (cell.current) setPickedDate(new Date(year, month, cell.day));
+                    onConfirm(new Date(cell.date));
                   }}
-                  activeOpacity={cell.current ? 0.7 : 1}
-                  style={[styles.calCell, picked && styles.calCellPicked]}
+                  activeOpacity={0.7}
+                  style={[
+                    styles.calCell,
+                    !cell.current && styles.calCellOutside,
+                    todayCell && styles.calCellToday,
+                  ]}
                 >
-                  <Text style={[
-                    styles.calCellText,
-                    !cell.current && styles.calCellMuted,
-                    picked && styles.calCellTextPicked,
-                  ]}>
-                    {cell.day}
-                  </Text>
+                  {picked ? (
+                    <LinearGradient
+                      pointerEvents="none"
+                      colors={['#FFB347', '#FF8A1F']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.calCellPicked}
+                    >
+                      <Text style={[styles.calCellText, styles.calCellTextPicked]}>
+                        {cell.date.getDate()}
+                      </Text>
+                    </LinearGradient>
+                  ) : (
+                    <Text style={[
+                      styles.calCellText,
+                      !cell.current && styles.calCellMuted,
+                      todayCell && styles.calCellTextToday,
+                    ]}>
+                      {cell.date.getDate()}
+                    </Text>
+                  )}
                 </TouchableOpacity>
               );
             })}
           </View>
-        </View>
 
-        {/* Butonlar */}
-        <View style={[styles.sheetBtnRow, { paddingHorizontal: 20 }]}>
           <TouchableOpacity
-            style={[styles.cancelBtn, { backgroundColor: colors.purpleLight, flex: 1 }]}
-            onPress={onCancel} activeOpacity={0.8}
-          >
-            <Text style={[styles.cancelBtnText, { color: colors.purple }]}>İptal</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{ flex: 1 }}
-            onPress={() => onConfirm(pickedDate)}
+            style={styles.calendarTodayButton}
+            onPress={() => onConfirm(new Date(today))}
             activeOpacity={0.8}
           >
-            <LinearGradient
-              colors={['#8B7FD4', '#7B6FCF']}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={styles.cancelBtn}
-            >
-              <Text style={[styles.cancelBtnText, { color: '#fff' }]}>Tamam</Text>
-            </LinearGradient>
+            <MaterialCommunityIcons name="calendar-today" size={16} color={colors.orangeDark} />
+            <Text style={styles.calendarTodayText}>Bugüne Git</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -228,7 +272,7 @@ function IconPickerSheet({ visible, selectedIcon, onSelect, onCancel }: {
         <FlatList
           data={list}
           keyExtractor={(item) => item}
-          numColumns={5}
+          numColumns={8}
           contentContainerStyle={{ paddingHorizontal: 16 }}
           renderItem={({ item }) => {
             const isSelected = selectedIcon === item;
@@ -241,11 +285,14 @@ function IconPickerSheet({ visible, selectedIcon, onSelect, onCancel }: {
                   { backgroundColor: isSelected ? colors.orange : colors.tabBg },
                 ]}
               >
-                <MaterialCommunityIcons
-                  name={item}
-                  size={28}
-                  color={isSelected ? colors.white : colors.text}
-                />
+                <View style={styles.iconGlyphWrap}>
+                  <MaterialCommunityIcons
+                    name={item}
+                    size={ICON_PICKER_GLYPH_SIZE}
+                    color={isSelected ? colors.white : colors.text}
+                    style={styles.iconGlyph}
+                  />
+                </View>
               </TouchableOpacity>
             );
           }}
@@ -859,28 +906,19 @@ function createStyles(colors: AppColors, isDark: boolean) {
     saveWrap: { paddingHorizontal: 40, paddingBottom: 32, paddingTop: 8 },
     saveBtn: { borderRadius: 16, paddingVertical: 14, alignItems: 'center' },
     saveBtnText: { fontSize: 16, fontWeight: '700', color: colors.white, letterSpacing: 0.3 },
-    sheetBtnRow: { flexDirection: 'row', gap: 12 },
-    cancelBtn: {
-      flex: 1,
-      borderRadius: 14,
-      paddingVertical: 15,
-      backgroundColor: colors.surfaceAlt,
-      alignItems: 'center',
-    },
-    cancelBtnText: { fontSize: 15, fontWeight: '600', color: colors.text },
     sheetTitle: {
       fontSize: 18,
       fontWeight: '700',
       color: colors.text,
-      textAlign: 'center',
-      paddingTop: 16,
-      paddingBottom: 4,
+      paddingBottom: 2,
+    },
+    calendarSheetContent: {
+      paddingBottom: 20,
     },
     calBox: {
-      margin: 20,
-      backgroundColor: colors.calBg,
-      borderRadius: 18,
-      padding: 16,
+      marginHorizontal: 20,
+      marginBottom: 12,
+      paddingHorizontal: 4,
     },
     calNavRow: {
       flexDirection: 'row',
@@ -888,30 +926,81 @@ function createStyles(colors: AppColors, isDark: boolean) {
       justifyContent: 'space-between',
       marginBottom: 14,
     },
-    calNavBtn: { paddingHorizontal: 10, paddingVertical: 4 },
-    calNavArrow: { fontSize: 22, color: colors.text },
+    calNavBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 14,
+      backgroundColor: colors.orangeBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    calMonthBadge: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 999,
+      backgroundColor: isDark ? colors.tabBg : '#FFF8F1',
+      borderWidth: 1,
+      borderColor: isDark ? colors.border : colors.orangeBg,
+    },
     calMonthLabel: { fontSize: 16, fontWeight: '700', color: colors.text },
-    calDayRow: { flexDirection: 'row', marginBottom: 6 },
+    calDayRow: { flexDirection: 'row', marginBottom: 8 },
     calDayLabel: {
       flex: 1,
       textAlign: 'center',
-      fontSize: 13,
+      fontSize: 12,
       fontWeight: '600',
-      color: colors.chevron,
-      paddingBottom: 6,
+      color: colors.muted,
+      paddingBottom: 4,
+      textTransform: 'uppercase',
     },
-    calGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+    calGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      columnGap: 0,
+      rowGap: 6,
+    },
     calCell: {
       width: `${100 / 7}%` as any,
       aspectRatio: 1,
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: 100,
+      borderRadius: 18,
     },
-    calCellPicked: { backgroundColor: colors.purple },
-    calCellText: { fontSize: 14, fontWeight: '500', color: colors.text },
+    calCellOutside: {
+      opacity: 0.55,
+    },
+    calCellToday: {
+      borderWidth: 1,
+      borderColor: colors.orangeLight,
+      backgroundColor: isDark ? colors.tabBg : '#FFF8F1',
+    },
+    calCellPicked: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    calCellText: { fontSize: 14, fontWeight: '600', color: colors.text },
     calCellMuted: { color: colors.chevron },
+    calCellTextToday: { color: colors.orangeDark },
     calCellTextPicked: { color: colors.white, fontWeight: '700' },
+    calendarTodayButton: {
+      marginTop: 14,
+      alignSelf: 'center',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 9,
+      borderRadius: 999,
+      backgroundColor: isDark ? colors.tabBg : '#FFF8F1',
+    },
+    calendarTodayText: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.orangeDark,
+    },
     iconSheetHeader: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -931,10 +1020,23 @@ function createStyles(colors: AppColors, isDark: boolean) {
     iconCell: {
       flex: 1,
       aspectRatio: 1,
-      margin: 4,
-      borderRadius: 16,
+      margin: 3,
+      borderRadius: 12,
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    iconGlyphWrap: {
+      width: ICON_PICKER_GLYPH_SIZE,
+      height: ICON_PICKER_GLYPH_SIZE,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    iconGlyph: {
+      width: ICON_PICKER_GLYPH_SIZE,
+      height: ICON_PICKER_GLYPH_SIZE,
+      lineHeight: ICON_PICKER_GLYPH_SIZE,
+      textAlign: 'center',
+      includeFontPadding: false,
     },
   });
 }

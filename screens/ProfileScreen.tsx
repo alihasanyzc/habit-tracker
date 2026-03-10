@@ -1,14 +1,18 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
+  TouchableOpacity,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import ScreenHeader from '../components/ScreenHeader';
 import ProfileThemeCard from '../components/ProfileThemeCard';
+import PlusScreen from './PlusScreen';
 import {
   useAppColors,
   useIsDark,
@@ -29,6 +33,7 @@ export default function ProfileScreen() {
   const colors = useAppColors();
   const isDark = useIsDark();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const [plusVisible, setPlusVisible] = useState(false);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -39,19 +44,39 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        <View style={styles.heroCard}>
-          <View style={styles.heroAvatar}>
-            <Feather name="user" size={22} color={colors.orangeDark} />
-          </View>
+        <TouchableOpacity
+          style={styles.plusCard}
+          activeOpacity={0.85}
+          onPress={() => setPlusVisible(true)}
+        >
+          <LinearGradient
+            colors={isDark
+              ? ['#3A2200', '#2A1800']
+              : ['#FFF4EA', '#FFE8D0']
+            }
+            style={styles.plusGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.plusIconWrap}>
+              <MaterialCommunityIcons name="crown" size={22} color={colors.orange} />
+            </View>
+            <View style={styles.plusCopy}>
+              <Text style={styles.plusTitle}>Plus'a Yükselt</Text>
+              <Text style={styles.plusDesc}>Sınırsız alışkanlık, detaylı istatistik ve daha fazlası</Text>
+            </View>
+            <Feather name="chevron-right" size={20} color={colors.orange} />
+          </LinearGradient>
+        </TouchableOpacity>
 
-          <View style={styles.heroCopy}>
-            <Text style={styles.heroTitle}>Hesabını buradan yönet</Text>
-            <Text style={styles.heroText}>
-              Kişisel bilgilerini kontrol edebilir, tema tercihini değiştirebilir ve hesap
-              durumunu tek ekranda sade bir şekilde görebilirsin.
-            </Text>
-          </View>
-        </View>
+        <Modal
+          visible={plusVisible}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setPlusVisible(false)}
+        >
+          <PlusScreen onClose={() => setPlusVisible(false)} />
+        </Modal>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Temel Bilgiler</Text>
@@ -118,43 +143,6 @@ function createStyles(colors: AppColors, isDark: boolean) {
       paddingBottom: 32,
       gap: 18,
     },
-    heroCard: {
-      backgroundColor: colors.surface,
-      borderRadius: 24,
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: 18,
-      flexDirection: 'row',
-      alignItems: 'center',
-      shadowColor: colors.shadowSoft,
-      shadowOpacity: isDark ? 0.14 : 0.08,
-      shadowRadius: 16,
-      shadowOffset: { width: 0, height: 8 },
-      elevation: isDark ? 0 : 2,
-    },
-    heroAvatar: {
-      width: 52,
-      height: 52,
-      borderRadius: 16,
-      backgroundColor: colors.softInfoBg,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 14,
-    },
-    heroCopy: {
-      flex: 1,
-    },
-    heroTitle: {
-      fontSize: 17,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    heroText: {
-      marginTop: 4,
-      fontSize: 13,
-      lineHeight: 19,
-      color: colors.muted,
-    },
     section: {
       gap: 12,
     },
@@ -202,6 +190,40 @@ function createStyles(colors: AppColors, isDark: boolean) {
     rowValue: {
       marginTop: 2,
       fontSize: 13,
+      color: colors.muted,
+    },
+    plusCard: {
+      borderRadius: 24,
+      overflow: 'hidden',
+    },
+    plusGradient: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: isDark ? colors.border : 'rgba(255,138,31,0.2)',
+    },
+    plusIconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      backgroundColor: isDark ? 'rgba(255,138,31,0.15)' : 'rgba(255,138,31,0.12)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    plusCopy: {
+      flex: 1,
+    },
+    plusTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    plusDesc: {
+      marginTop: 2,
+      fontSize: 12,
       color: colors.muted,
     },
   });
