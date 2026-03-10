@@ -8,7 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { getThemedAccentSurface, useAppColors, useIsDark, type AppColors } from '../constants/colors';
 import { getHabits } from '../utils/habitRepository';
@@ -54,26 +54,22 @@ function HabitDetailCard({ habit }: { habit: Habit }) {
 
   return (
     <View style={[styles.card, { backgroundColor: surface }]}>
-      {/* ── Üst satır: ikon + isim ── */}
-      <View style={styles.cardTop}>
+      {/* ── Tek satır: ikon | isim | 🔥 streak | tarih ── */}
+      <View style={styles.cardRow}>
         <View style={[styles.iconBox, { backgroundColor: colors.translucentCard }]}>
-          <MaterialCommunityIcons name={habit.icon as any} size={22} color={habit.iconColor} />
+          <MaterialCommunityIcons name={habit.icon as any} size={18} color={habit.iconColor} />
         </View>
-        <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
-      </View>
 
-      {/* ── Alt satır: seri solda, tarih/süresiz sağda ── */}
-      <View style={styles.metaRow}>
-        <View style={styles.metaLeft}>
-          <Text style={[styles.metaValue, { color: colors.orange }]}>{streakLabel(streak)}</Text>
-          <Text style={styles.metaLabel}>Seri</Text>
+        <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
+
+        <View style={styles.streakRow}>
+          <Ionicons name="flame" size={13} color={colors.orange} />
+          <Text style={[styles.streakValue, { color: colors.orange }]}>{streak}</Text>
         </View>
-        <View style={styles.metaRight}>
-          <Text style={styles.metaValue}>
+
+        <View style={[styles.datePill, { backgroundColor: colors.surfaceAlt }]}>
+          <Text style={styles.dateText}>
             {habit.noEndDate ? 'Süresiz' : endLabel}
-          </Text>
-          <Text style={[styles.metaLabel, { textAlign: 'right' }]}>
-            {habit.noEndDate ? '' : 'Bitiş'}
           </Text>
         </View>
       </View>
@@ -122,11 +118,6 @@ export default function HabitScreen() {
           <Text style={styles.title}>Alışkanlıklarım</Text>
           <Text style={styles.subtitle}>
             {completedCount}/{total} bugün tamamlandı
-          </Text>
-        </View>
-        <View style={[styles.progressCircle, { borderColor: colors.orange }]}>
-          <Text style={styles.progressPct}>
-            {total > 0 ? Math.round((completedCount / total) * 100) : 0}%
           </Text>
         </View>
       </View>
@@ -243,62 +234,59 @@ function createStyles(colors: AppColors, isDark: boolean) {
 
     // ── Kart ──
     card: {
-      borderRadius: 18,
-      marginBottom: 8,
-      padding: 10,
+      borderRadius: 14,
+      marginBottom: 6,
+      paddingVertical: 9,
+      paddingHorizontal: 10,
       ...Platform.select({
         ios: {
           shadowColor: colors.shadow,
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: isDark ? 0.18 : 0.07,
-          shadowRadius: 8,
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: isDark ? 0.14 : 0.06,
+          shadowRadius: 6,
         },
-        android: { elevation: 3 },
+        android: { elevation: 2 },
       }),
     },
-    cardTop: {
+    cardRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 10,
+      gap: 8,
     },
     iconBox: {
-      width: 34,
-      height: 34,
-      borderRadius: 10,
+      width: 30,
+      height: 30,
+      borderRadius: 9,
       alignItems: 'center',
       justifyContent: 'center',
+      flexShrink: 0,
     },
     habitName: {
       flex: 1,
-      fontSize: 15,
+      fontSize: 14,
       fontWeight: '600',
       color: colors.text,
     },
-
-    metaRow: {
+    streakRow: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'flex-end',
-      marginTop: 10,
-      paddingHorizontal: 2,
+      alignItems: 'center',
+      gap: 2,
+      flexShrink: 0,
     },
-    metaLeft: {
-      alignItems: 'flex-start',
-      gap: 1,
-    },
-    metaRight: {
-      alignItems: 'flex-end',
-      gap: 1,
-    },
-    metaValue: {
-      fontSize: 13,
+    streakValue: {
+      fontSize: 12,
       fontWeight: '700',
-      color: colors.text,
     },
-    metaLabel: {
-      fontSize: 10,
+    datePill: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 8,
+      flexShrink: 0,
+    },
+    dateText: {
+      fontSize: 11,
+      fontWeight: '500',
       color: colors.muted,
-      fontWeight: '400',
     },
 
     emptyWrap: {
