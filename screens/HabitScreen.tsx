@@ -54,24 +54,23 @@ function HabitDetailCard({ habit }: { habit: Habit }) {
 
   return (
     <View style={[styles.card, { backgroundColor: surface }]}>
-      {/* ── Tek satır: ikon | isim | 🔥 streak | tarih ── */}
-      <View style={styles.cardRow}>
+      {/* ── Üst satır: ikon + isim ── */}
+      <View style={styles.cardTop}>
         <View style={[styles.iconBox, { backgroundColor: colors.translucentCard }]}>
           <MaterialCommunityIcons name={habit.icon as any} size={18} color={habit.iconColor} />
         </View>
-
         <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
+      </View>
 
+      {/* ── Alt satır: streak sol, tarih sağ ── */}
+      <View style={styles.cardBottom}>
         <View style={styles.streakRow}>
-          <Ionicons name="flame" size={13} color={colors.orange} />
-          <Text style={[styles.streakValue, { color: colors.orange }]}>{streak}</Text>
+          <Ionicons name="flame" size={12} color={colors.orange} />
+          <Text style={styles.streakValue}>{streak} gün</Text>
         </View>
-
-        <View style={[styles.datePill, { backgroundColor: colors.surfaceAlt }]}>
-          <Text style={styles.dateText}>
-            {habit.noEndDate ? 'Süresiz' : endLabel}
-          </Text>
-        </View>
+        <Text style={styles.dateValue}>
+          {habit.noEndDate ? 'Süresiz' : endLabel}
+        </Text>
       </View>
     </View>
   );
@@ -236,8 +235,8 @@ function createStyles(colors: AppColors, isDark: boolean) {
     card: {
       borderRadius: 14,
       marginBottom: 6,
-      paddingVertical: 9,
-      paddingHorizontal: 10,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
       ...Platform.select({
         ios: {
           shadowColor: colors.shadow,
@@ -248,10 +247,17 @@ function createStyles(colors: AppColors, isDark: boolean) {
         android: { elevation: 2 },
       }),
     },
-    cardRow: {
+    cardTop: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
+    },
+    cardBottom: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: 8,
+      paddingLeft: 38,
     },
     iconBox: {
       width: 30,
@@ -270,21 +276,15 @@ function createStyles(colors: AppColors, isDark: boolean) {
     streakRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 2,
-      flexShrink: 0,
+      gap: 3,
     },
     streakValue: {
       fontSize: 12,
-      fontWeight: '700',
+      fontWeight: '600',
+      color: colors.orange,
     },
-    datePill: {
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-      borderRadius: 8,
-      flexShrink: 0,
-    },
-    dateText: {
-      fontSize: 11,
+    dateValue: {
+      fontSize: 12,
       fontWeight: '500',
       color: colors.muted,
     },
