@@ -6,12 +6,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import ScreenHeader from '../components/ScreenHeader';
 import BottomSheet from '../components/BottomSheet';
 import PillTabs from '../components/PillTabs';
 import { useAppColors, useIsDark, type AppColors } from '../constants/colors';
 import { HabitCard } from './HomeScreen';
 import { useToast } from '../components/ToastProvider';
+import type { Habit } from '../types/habit';
+import { addHabit } from '../utils/habitRepository';
 
 const SCREEN_H = Dimensions.get('window').height;
 
@@ -429,6 +432,7 @@ export default function CreateScreen() {
   const colors = useAppColors();
   const styles = useThemedStyles();
   const { showToast } = useToast();
+  const navigation = useNavigation<any>();
   const [taskName, setTaskName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState<IconName>('medal');
   const [selectedColor, setSelectedColor] = useState('#FF8A1F');
@@ -441,7 +445,25 @@ export default function CreateScreen() {
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
 
-  const handleSave = () => {
+  const navigateToHome = () => {
+    const parentNavigation = navigation.getParent?.();
+    if (parentNavigation?.navigate) {
+      parentNavigation.navigate('Home');
+      return;
+    }
+    navigation.navigate('Home');
+  };
+
+  const resetForm = () => {
+    setTaskName('');
+    setSelectedIcon('medal');
+    setSelectedColor('#FF8A1F');
+    setStartDate(new Date());
+    setEndDate(new Date());
+    setNoEndDate(false);
+  };
+
+  const handleSave = async () => {
     if (!taskName.trim()) {
       showToast({
         type: 'error',
@@ -458,11 +480,37 @@ export default function CreateScreen() {
       });
       return;
     }
-    showToast({
-      type: 'success',
-      title: 'Kaydedildi',
-      message: `"${taskName.trim()}" alışkanlığı oluşturuldu.`,
-    });
+    const trimmedName = taskName.trim();
+    const habit: Habit = {
+      id: `habit-${Date.now()}`,
+      name: trimmedName,
+      completed: false,
+      bgColor: lightenColor(selectedColor),
+      icon: selectedIcon,
+      iconColor: selectedColor,
+      createdAt: new Date().toISOString(),
+      startDate: startDate.toISOString().slice(0, 10),
+      endDate: noEndDate ? null : endDate.toISOString().slice(0, 10),
+      noEndDate,
+    };
+
+    try {
+      await addHabit(habit);
+      resetForm();
+      showToast({
+        type: 'success',
+        title: 'Kaydedildi',
+        message: `"${trimmedName}" alışkanlığı oluşturuldu.`,
+      });
+      navigateToHome();
+    } catch (error) {
+      console.error('Habit save failed', error);
+      showToast({
+        type: 'error',
+        title: 'Kaydedilemedi',
+        message: 'Alışkanlık kaydedilirken bir hata oluştu.',
+      });
+    }
   };
 
   return (
@@ -483,12 +531,16 @@ export default function CreateScreen() {
         <View style={{ marginHorizontal: -20, marginBottom: 28 }}>
           <HabitCard
             habit={{
-              id: 0,
+              id: 'preview',
               name: taskName || 'Alışkanlık adı girin...',
               completed: false,
               bgColor: lightenColor(selectedColor),
               icon: selectedIcon,
-              iconColor: selectedColor
+              iconColor: selectedColor,
+              createdAt: new Date().toISOString(),
+              startDate: startDate.toISOString().slice(0, 10),
+              endDate: noEndDate ? null : endDate.toISOString().slice(0, 10),
+              noEndDate,
             }}
             onToggle={() => { }}
           />

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,9 @@ import {
   type AppColors,
 } from '../constants/colors';
 import { getTimeOfDay, AnimatedTimeIcon } from '../utils/timeOfDay';
+import { useFocusEffect } from '@react-navigation/native';
+import type { Habit } from '../types/habit';
+import { getHabits, toggleHabitCompletion } from '../utils/habitRepository';
 
 const WEEK_DAYS = [
   { day: 'Pzt', date: 7, pct: 75 },
@@ -28,24 +31,6 @@ const WEEK_DAYS = [
   { day: 'Cum', date: 11, pct: 25 },
   { day: 'Cmt', date: 12, pct: 0 },
   { day: 'Paz', date: 13, pct: 60 },
-];
-
-export interface Habit {
-  id: number;
-  name: string;
-  completed: boolean;
-  bgColor: string;
-  icon: string;
-  iconColor: string;
-}
-
-const INITIAL_HABITS: Habit[] = [
-  { id: 1, name: 'Küçük Hedef Belirle', completed: true, bgColor: '#FFF0E0', icon: 'target', iconColor: '#FF8A1F' },
-  { id: 2, name: 'Çalışma', completed: true, bgColor: '#ECEEFA', icon: 'briefcase-outline', iconColor: '#7B8AB8' },
-  { id: 3, name: 'Meditasyon', completed: false, bgColor: '#F4EEFA', icon: 'meditation', iconColor: '#A67CC5' },
-  { id: 4, name: 'Basketbol', completed: false, bgColor: '#FFE8D6', icon: 'basketball', iconColor: '#E06B00' },
-  { id: 5, name: 'Kitap Okuma', completed: false, bgColor: '#EEF6DA', icon: 'book-open-variant', iconColor: '#8FB339' },
-  { id: 6, name: 'Su İç', completed: false, bgColor: '#E2F0FB', icon: 'water', iconColor: '#4A90D9' },
 ];
 
 function CircleDay({
@@ -116,7 +101,7 @@ export function HabitCard({
   onToggle,
 }: {
   habit: Habit;
-  onToggle: (id: number) => void;
+  onToggle: (id: string) => void;
 }) {
   const colors = useAppColors();
   const isDark = useIsDark();
@@ -196,13 +181,37 @@ export default function HomeScreen() {
   const colors = useAppColors();
   const isDark = useIsDark();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
-  const [habits, setHabits] = useState<Habit[]>(INITIAL_HABITS);
+  const [habits, setHabits] = useState<Habit[]>([]);
   const [selectedDate, setSelectedDate] = useState(10);
   const insets = useSafeAreaInsets();
 
-  const toggleHabit = (id: number) => {
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const loadHabits = async () => {
+        const storedHabits = await getHabits();
+        if (isActive) {
+          setHabits(storedHabits);
+        }
+      };
+
+      void loadHabits();
+
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
+
+  const toggleHabit = useCallback((id: string) => {
     setHabits(prev => prev.map(h => h.id === id ? { ...h, completed: !h.completed } : h));
-  };
+    void toggleHabitCompletion(id).then((nextHabits) => {
+      if (nextHabits) {
+        setHabits(nextHabits);
+      }
+    });
+  }, []);
 
   const completed = habits.filter(h => h.completed);
   const active = habits.filter(h => !h.completed);
@@ -220,8 +229,8 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View>
-            <Text style={styles.greeting}>{timeOfDay.greeting}, Budi</Text>
-            <Text style={styles.dateText}>Salı, 10 Mart, 2025</Text>
+            <Text style={styles.greeting}>{timeOfDay.greeting}</Text>
+            <Text style={styles.dateText}>Salı, 10 Mart 2025</Text>
           </View>
           <View style={styles.headerRight}>
             <View style={[styles.avatar, { backgroundColor: timeOfDay.bg }]}>

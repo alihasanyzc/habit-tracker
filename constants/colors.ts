@@ -1,4 +1,4 @@
-import { useColorScheme } from 'react-native';
+import { useAppTheme } from '../providers/ThemeProvider';
 
 export const ACCENT = {
   white: '#FFFFFF',
@@ -80,12 +80,12 @@ export function getAppColors(scheme: 'light' | 'dark' | null | undefined): AppCo
 }
 
 export function useAppColors(): AppColors {
-  const scheme = useColorScheme();
-  return getAppColors(scheme);
+  const { resolvedScheme } = useAppTheme();
+  return getAppColors(resolvedScheme);
 }
 
 export function useIsDark() {
-  return useColorScheme() === 'dark';
+  return useAppTheme().isDark;
 }
 
 function normalizeHex(hex: string) {

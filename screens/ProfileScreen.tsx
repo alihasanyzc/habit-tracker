@@ -1,98 +1,208 @@
 import React, { useMemo } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import ScreenHeader from '../components/ScreenHeader';
-import { ACCENT, useAppColors, type AppColors } from '../constants/colors';
+import ProfileThemeCard from '../components/ProfileThemeCard';
+import {
+  useAppColors,
+  useIsDark,
+  type AppColors,
+} from '../constants/colors';
 
-// ── Menü Öğeleri ───────────────────────────────────────
-const MENU_ITEMS = [
-  { icon: 'settings', label: 'Tercihler', accent: ACCENT.orange },
-  { icon: 'user', label: 'Kişisel Bilgiler', accent: ACCENT.green },
-  { icon: 'credit-card', label: 'Ödeme Yöntemleri', accent: ACCENT.brown },
-  { icon: 'star', label: 'Faturalandırma ve Abonelik', accent: ACCENT.pink },
-  { icon: 'shield', label: 'Hesap ve Güvenlik', accent: ACCENT.orange },
-  { icon: 'link', label: 'Bağlı Hesaplar', accent: ACCENT.green },
-  { icon: 'eye', label: 'Uygulama Görünümü', accent: ACCENT.brown },
-  { icon: 'bar-chart-2', label: 'Veri ve İstatistikler', accent: ACCENT.pink },
-];
+const PROFILE_FIELDS = [
+  { icon: 'user', label: 'Ad Soyad', value: 'Henüz eklenmedi' },
+  { icon: 'mail', label: 'E-posta', value: 'Yerel kullanım modu' },
+  { icon: 'phone', label: 'Telefon', value: 'Henüz eklenmedi' },
+] as const;
 
-// ════════════════════════════════════════════════════════
-// ANA BİLEŞEN
-// ════════════════════════════════════════════════════════
+const SECURITY_ITEMS = [
+  { icon: 'lock', label: 'Şifre', value: 'Yerel kullanım' },
+] as const;
+
 export default function ProfileScreen() {
   const colors = useAppColors();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const isDark = useIsDark();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <ScreenHeader title="Profil" subtitle="Temel hesap bilgileri ve görünüm ayarları" />
 
-      {/* ── Başlık ──────────────────────────────────── */}
-      <ScreenHeader title="Profil" subtitle="Hesap ayarları ve tercihler" />
-
-      {/* ── Menü Listesi ──────────────────────────────── */}
       <ScrollView
         style={styles.scroll}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={styles.content}
       >
-        {MENU_ITEMS.map((item, idx) => {
-          const isLast = idx === MENU_ITEMS.length - 1;
-          return (
-            <TouchableOpacity
-              key={item.label}
-              style={[
-                styles.menuItem,
-                !isLast && styles.menuItemBorder,
-              ]}
-              activeOpacity={0.6}
-            >
-              {/* İkon kutusu */}
-              <View style={[styles.iconBox, { backgroundColor: colors.surfaceAlt }]}>
-                <Feather name={item.icon as any} size={20} color={item.accent} />
+        <View style={styles.heroCard}>
+          <View style={styles.heroAvatar}>
+            <Feather name="user" size={22} color={colors.orangeDark} />
+          </View>
+
+          <View style={styles.heroCopy}>
+            <Text style={styles.heroTitle}>Hesabını buradan yönet</Text>
+            <Text style={styles.heroText}>
+              Kişisel bilgilerini kontrol edebilir, tema tercihini değiştirebilir ve hesap
+              durumunu tek ekranda sade bir şekilde görebilirsin.
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Temel Bilgiler</Text>
+          <View style={styles.listCard}>
+            {PROFILE_FIELDS.map((field, index) => (
+              <View
+                key={field.label}
+                style={[styles.row, index < PROFILE_FIELDS.length - 1 && styles.rowBorder]}
+              >
+                <View style={styles.rowIcon}>
+                  <Feather name={field.icon} size={16} color={colors.orange} />
+                </View>
+
+                <View style={styles.rowCopy}>
+                  <Text style={styles.rowLabel}>{field.label}</Text>
+                  <Text style={styles.rowValue}>{field.value}</Text>
+                </View>
               </View>
+            ))}
+          </View>
+        </View>
 
-              {/* Etiket */}
-              <Text style={styles.menuLabel}>{item.label}</Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Görünüm</Text>
+          <ProfileThemeCard />
+        </View>
 
-              {/* Chevron */}
-              <Feather name="chevron-right" size={22} color={colors.chevron} />
-            </TouchableOpacity>
-          );
-        })}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Güvenlik</Text>
+          <View style={styles.listCard}>
+            {SECURITY_ITEMS.map((item, index) => (
+              <View
+                key={item.label}
+                style={[styles.row, index < SECURITY_ITEMS.length - 1 && styles.rowBorder]}
+              >
+                <View style={styles.rowIcon}>
+                  <Feather name={item.icon} size={16} color={colors.orange} />
+                </View>
+
+                <View style={styles.rowCopy}>
+                  <Text style={styles.rowLabel}>{item.label}</Text>
+                  <Text style={styles.rowValue}>{item.value}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
       </ScrollView>
-
     </SafeAreaView>
   );
 }
 
-function createStyles(colors: AppColors) {
+function createStyles(colors: AppColors, isDark: boolean) {
   return StyleSheet.create({
-    safe: { flex: 1, backgroundColor: colors.bg },
-    scroll: { flex: 1 },
-
-    menuItem: {
+    safe: {
+      flex: 1,
+      backgroundColor: colors.bg,
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
+      paddingHorizontal: 20,
+      paddingBottom: 32,
+      gap: 18,
+    },
+    heroCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 18,
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 22,
-      paddingVertical: 15,
+      shadowColor: colors.shadowSoft,
+      shadowOpacity: isDark ? 0.14 : 0.08,
+      shadowRadius: 16,
+      shadowOffset: { width: 0, height: 8 },
+      elevation: isDark ? 0 : 2,
     },
-    menuItemBorder: {
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-
-    iconBox: {
-      width: 36,
-      height: 36,
-      borderRadius: 10,
+    heroAvatar: {
+      width: 52,
+      height: 52,
+      borderRadius: 16,
+      backgroundColor: colors.softInfoBg,
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 14,
-      flexShrink: 0,
     },
-    menuLabel: { flex: 1, fontSize: 16, fontWeight: '500', color: colors.text },
+    heroCopy: {
+      flex: 1,
+    },
+    heroTitle: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    heroText: {
+      marginTop: 4,
+      fontSize: 13,
+      lineHeight: 19,
+      color: colors.muted,
+    },
+    section: {
+      gap: 12,
+    },
+    sectionTitle: {
+      fontSize: 13,
+      fontWeight: '700',
+      letterSpacing: 0.4,
+      textTransform: 'uppercase',
+      color: colors.muted,
+    },
+    listCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+    },
+    rowBorder: {
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    rowIcon: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor: colors.surfaceAlt,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    rowCopy: {
+      flex: 1,
+    },
+    rowLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    rowValue: {
+      marginTop: 2,
+      fontSize: 13,
+      color: colors.muted,
+    },
   });
 }

@@ -1,0 +1,159 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { LocalHabitData, UserPlan } from '../types/habit';
+
+const STORAGE_KEYS = {
+  plan: 'user_plan',
+  habits: 'local_habit_data',
+  themePreference: 'app_theme_preference',
+} as const;
+
+const DEFAULT_PLAN: UserPlan = 'guest';
+const DEFAULT_THEME_PREFERENCE: ThemePreference = 'system';
+const memoryStorage = new Map<string, string>();
+let useMemoryStorage = false;
+let hasWarnedAboutMemoryFallback = false;
+
+export type ThemePreference = 'system' | 'light' | 'dark';
+
+function shouldUseMemoryFallback(error: unknown) {
+  return error instanceof Error && error.message.includes('Native module is null');
+}
+
+function warnAboutMemoryFallback() {
+  if (hasWarnedAboutMemoryFallback) {
+    return;
+  }
+
+  hasWarnedAboutMemoryFallback = true;
+  console.warn(
+    'AsyncStorage native module is unavailable. Falling back to in-memory storage for this session.'
+  );
+}
+
+async function getStoredItem(key: string) {
+  if (useMemoryStorage) {
+    return memoryStorage.get(key) ?? null;
+  }
+
+  try {
+    return await AsyncStorage.getItem(key);
+  } catch (error) {
+    if (shouldUseMemoryFallback(error)) {
+      useMemoryStorage = true;
+      warnAboutMemoryFallback();
+      return memoryStorage.get(key) ?? null;
+    }
+
+    throw error;
+  }
+}
+
+async function setStoredItem(key: string, value: string) {
+  if (useMemoryStorage) {
+    memoryStorage.set(key, value);
+    return;
+  }
+
+  try {
+    await AsyncStorage.setItem(key, value);
+  } catch (error) {
+    if (shouldUseMemoryFallback(error)) {
+      useMemoryStorage = true;
+      warnAboutMemoryFallback();
+      memoryStorage.set(key, value);
+      return;
+    }
+
+    throw error;
+  }
+}
+
+async function removeStoredItem(key: string) {
+  if (useMemoryStorage) {
+    memoryStorage.delete(key);
+    return;
+  }
+
+  try {
+    await AsyncStorage.removeItem(key);
+  } catch (error) {
+    if (shouldUseMemoryFallback(error)) {
+      useMemoryStorage = true;
+      warnAboutMemoryFallback();
+      memoryStorage.delete(key);
+      return;
+    }
+
+    throw error;
+  }
+}
+
+function createEmptyHabitData(): LocalHabitData {
+  return {
+    habits: [],
+    entries: [],
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+export async function getPlan(): Promise<UserPlan> {
+  const storedPlan = await getStoredItem(STORAGE_KEYS.plan);
+
+  if (storedPlan === 'guest' || storedPlan === 'free' || storedPlan === 'plus') {
+    return storedPlan;
+  }
+
+  return DEFAULT_PLAN;
+}
+
+export async function setPlan(plan: UserPlan) {
+  await setStoredItem(STORAGE_KEYS.plan, plan);
+}
+
+export async function getThemePreference(): Promise<ThemePreference> {
+  const storedPreference = await getStoredItem(STORAGE_KEYS.themePreference);
+
+  if (storedPreference === 'system' || storedPreference === 'light' || storedPreference === 'dark') {
+    return storedPreference;
+  }
+
+  return DEFAULT_THEME_PREFERENCE;
+}
+
+export async function setThemePreference(preference: ThemePreference) {
+  await setStoredItem(STORAGE_KEYS.themePreference, preference);
+}
+
+export async function getLocalHabitData(): Promise<LocalHabitData> {
+  const rawData = await getStoredItem(STORAGE_KEYS.habits);
+
+  if (!rawData) {
+    return createEmptyHabitData();
+  }
+
+  try {
+    const parsed = JSON.parse(rawData) as LocalHabitData;
+
+    return {
+      habits: parsed.habits ?? [],
+      entries: parsed.entries ?? [],
+      updatedAt: parsed.updatedAt ?? new Date().toISOString(),
+    };
+  } catch {
+    return createEmptyHabitData();
+  }
+}
+
+export async function saveLocalHabitData(data: LocalHabitData) {
+  await setStoredItem(
+    STORAGE_KEYS.habits,
+    JSON.stringify({
+      ...data,
+      updatedAt: new Date().toISOString(),
+    })
+  );
+}
+
+export async function clearLocalHabitData() {
+  await removeStoredItem(STORAGE_KEYS.habits);
+}
