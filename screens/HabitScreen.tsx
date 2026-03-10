@@ -8,7 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { getThemedAccentSurface, useAppColors, useIsDark, type AppColors } from '../constants/colors';
 import { getHabits } from '../utils/habitRepository';
@@ -54,51 +54,27 @@ function HabitDetailCard({ habit }: { habit: Habit }) {
 
   return (
     <View style={[styles.card, { backgroundColor: surface }]}>
-      {/* ── Üst satır: ikon + isim + tamamlanma rozeti ── */}
+      {/* ── Üst satır: ikon + isim ── */}
       <View style={styles.cardTop}>
         <View style={[styles.iconBox, { backgroundColor: colors.translucentCard }]}>
           <MaterialCommunityIcons name={habit.icon as any} size={22} color={habit.iconColor} />
         </View>
-
         <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
-
-        {habit.completed && (
-          <View style={[styles.doneBadge, { backgroundColor: colors.softSuccessBg }]}>
-            <Ionicons name="checkmark-circle" size={16} color={colors.green} />
-          </View>
-        )}
       </View>
 
-      {/* ── Divider ── */}
-      <View style={[styles.divider, { backgroundColor: colors.border }]} />
-
-      {/* ── Alt satır: 3 bilgi kutusu ── */}
+      {/* ── Alt satır: seri solda, tarih/süresiz sağda ── */}
       <View style={styles.metaRow}>
-        {/* Streak */}
-        <View style={styles.metaItem}>
-          <View style={[styles.metaIconWrap, { backgroundColor: colors.orangeBg }]}>
-            <Ionicons name="flame" size={14} color={colors.orange} />
-          </View>
-          <Text style={styles.metaValue}>{streakLabel(streak)}</Text>
+        <View style={styles.metaLeft}>
+          <Text style={[styles.metaValue, { color: colors.orange }]}>{streakLabel(streak)}</Text>
           <Text style={styles.metaLabel}>Seri</Text>
         </View>
-
-        {/* Başlangıç tarihi */}
-        <View style={[styles.metaItem, styles.metaItemBordered, { borderColor: colors.border }]}>
-          <View style={[styles.metaIconWrap, { backgroundColor: colors.purpleLight }]}>
-            <Ionicons name="calendar-outline" size={14} color={colors.purple} />
-          </View>
-          <Text style={styles.metaValue}>{startLabel}</Text>
-          <Text style={styles.metaLabel}>Başlangıç</Text>
-        </View>
-
-        {/* Bitiş tarihi */}
-        <View style={styles.metaItem}>
-          <View style={[styles.metaIconWrap, { backgroundColor: colors.softInfoBg }]}>
-            <Ionicons name="flag-outline" size={14} color={colors.orangeDark} />
-          </View>
-          <Text style={styles.metaValue}>{endLabel}</Text>
-          <Text style={styles.metaLabel}>Bitiş</Text>
+        <View style={styles.metaRight}>
+          <Text style={styles.metaValue}>
+            {habit.noEndDate ? 'Süresiz' : endLabel}
+          </Text>
+          <Text style={[styles.metaLabel, { textAlign: 'right' }]}>
+            {habit.noEndDate ? '' : 'Bitiş'}
+          </Text>
         </View>
       </View>
     </View>
@@ -185,7 +161,6 @@ export default function HabitScreen() {
       >
         {filtered.length === 0 ? (
           <View style={styles.emptyWrap}>
-            <Ionicons name="list-outline" size={48} color={colors.border} />
             <Text style={styles.emptyText}>Alışkanlık bulunamadı</Text>
           </View>
         ) : (
@@ -299,55 +274,31 @@ function createStyles(colors: AppColors, isDark: boolean) {
       fontWeight: '600',
       color: colors.text,
     },
-    doneBadge: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: 28,
-      height: 28,
-      borderRadius: 14,
-    },
-    doneBadgeText: {
-      fontSize: 11,
-      fontWeight: '600',
-    },
-
-    divider: {
-      height: 1,
-      marginVertical: 8,
-      marginHorizontal: 2,
-    },
 
     metaRow: {
       flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-end',
+      marginTop: 10,
+      paddingHorizontal: 2,
+    },
+    metaLeft: {
       alignItems: 'flex-start',
+      gap: 1,
     },
-    metaItem: {
-      flex: 1,
-      alignItems: 'center',
-      gap: 3,
-    },
-    metaItemBordered: {
-      borderLeftWidth: 1,
-      borderRightWidth: 1,
-    },
-    metaIconWrap: {
-      width: 24,
-      height: 24,
-      borderRadius: 7,
-      alignItems: 'center',
-      justifyContent: 'center',
+    metaRight: {
+      alignItems: 'flex-end',
+      gap: 1,
     },
     metaValue: {
-      fontSize: 12,
+      fontSize: 13,
       fontWeight: '700',
       color: colors.text,
-      textAlign: 'center',
     },
     metaLabel: {
       fontSize: 10,
       color: colors.muted,
       fontWeight: '400',
-      textAlign: 'center',
     },
 
     emptyWrap: {
