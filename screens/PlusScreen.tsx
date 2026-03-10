@@ -33,19 +33,9 @@ const FEATURES = [
     desc: 'Kişiselleştirilmiş bildirimlerle hiçbir günü kaçırma.',
   },
   {
-    icon: 'palette-outline' as const,
-    title: 'Özel Temalar',
-    desc: 'Uygulamanı kendi tarzına göre kişiselleştir.',
-  },
-  {
     icon: 'cloud-sync-outline' as const,
     title: 'Bulut Yedekleme',
     desc: 'Verilerini güvenle yedekle, cihazlar arası senkronize et.',
-  },
-  {
-    icon: 'shield-check-outline' as const,
-    title: 'Reklamsız Deneyim',
-    desc: 'Hiçbir reklam olmadan kesintisiz kullanım.',
   },
 ];
 
