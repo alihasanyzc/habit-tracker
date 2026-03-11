@@ -62,12 +62,12 @@ function HabitDetailCard({ habit }: { habit: Habit }) {
         {/* ── İsim (flex: 1, ortada) ── */}
         <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
 
-        {/* ── Sağ blok: üstte streak sayısı, sağ altta 🔥 ── */}
+        {/* ── Sağ blok: 🔥 sayı ── */}
         <View style={styles.rightBlock}>
           <View style={styles.streakBadge}>
+            <Ionicons name="flame" size={12} color={colors.orange} />
             <Text style={styles.streakValue}>{streak}</Text>
           </View>
-          <Ionicons name="flame" size={15} color={colors.orange} />
         </View>
       </View>
     </View>
@@ -282,12 +282,6 @@ function createStyles(colors: AppColors, isDark: boolean) {
       fontSize: 11,
       fontWeight: '700',
       color: colors.orange,
-    },
-    streakUnit: {
-      fontSize: 10,
-      fontWeight: '500',
-      color: colors.orange,
-      opacity: 0.75,
     },
     dateBlock: {
       alignItems: 'flex-end',
