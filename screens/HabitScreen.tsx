@@ -45,32 +45,31 @@ function HabitDetailCard({ habit }: { habit: Habit }) {
   const isDark = useIsDark();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const surface = useMemo(
-    () => getThemedAccentSurface(habit.bgColor, colors, isDark, 0.9),
+    () => getThemedAccentSurface(habit.bgColor, colors, isDark, 0.8),
     [habit.bgColor, colors, isDark]
   );
   const streak = calcStreak(habit);
-  const startLabel = formatDate(habit.startDate);
   const endLabel = habit.noEndDate ? 'Süresiz' : habit.endDate ? formatDate(habit.endDate) : 'Süresiz';
 
   return (
-    <View style={[styles.card, { backgroundColor: surface }]}>
-      {/* ── Üst satır: ikon + isim ── */}
-      <View style={styles.cardTop}>
-        <View style={[styles.iconBox, { backgroundColor: colors.translucentCard }]}>
-          <MaterialCommunityIcons name={habit.icon as any} size={18} color={habit.iconColor} />
+    <View style={styles.cardWrap}>
+      <View style={[styles.card, { backgroundColor: surface }]}>
+        {/* ── İkon ── */}
+        <View style={styles.emojiBox}>
+          <MaterialCommunityIcons name={habit.icon as any} size={22} color={habit.iconColor} />
         </View>
-        <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
-      </View>
 
-      {/* ── Alt satır: streak sol, tarih sağ ── */}
-      <View style={styles.cardBottom}>
-        <View style={styles.streakRow}>
-          <Ionicons name="flame" size={12} color={colors.orange} />
-          <Text style={styles.streakValue}>{streak} gün</Text>
+        {/* ── İsim (flex: 1, ortada) ── */}
+        <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
+
+        {/* ── Sağ blok: üstte 🔥 sayı, altta tarih ── */}
+        <View style={styles.rightBlock}>
+          <View style={styles.streakBadge}>
+            <Ionicons name="flame" size={12} color={colors.orange} />
+            <Text style={styles.streakValue}>{streak}</Text>
+          </View>
+          <Text style={styles.dateValue}>{endLabel}</Text>
         </View>
-        <Text style={styles.dateValue}>
-          {habit.noEndDate ? 'Süresiz' : endLabel}
-        </Text>
       </View>
     </View>
   );
@@ -228,15 +227,19 @@ function createStyles(colors: AppColors, isDark: boolean) {
     },
     scrollContent: {
       paddingTop: 12,
-      paddingHorizontal: 16,
     },
 
     // ── Kart ──
+    cardWrap: {
+      paddingHorizontal: 16,
+      marginBottom: 7,
+    },
     card: {
-      borderRadius: 14,
-      marginBottom: 6,
-      paddingVertical: 10,
-      paddingHorizontal: 12,
+      borderRadius: 16,
+      padding: 10,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
       ...Platform.select({
         ios: {
           shadowColor: colors.shadow,
@@ -247,44 +250,42 @@ function createStyles(colors: AppColors, isDark: boolean) {
         android: { elevation: 2 },
       }),
     },
-    cardTop: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
-    cardBottom: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginTop: 8,
-      paddingLeft: 38,
-    },
-    iconBox: {
-      width: 30,
-      height: 30,
-      borderRadius: 9,
+    emojiBox: {
+      width: 38,
+      height: 38,
+      borderRadius: 11,
+      backgroundColor: colors.translucentCard,
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0,
     },
     habitName: {
       flex: 1,
-      fontSize: 14,
+      fontSize: 15,
       fontWeight: '600',
       color: colors.text,
     },
-    streakRow: {
+    rightBlock: {
+      alignItems: 'flex-end',
+      gap: 4,
+      flexShrink: 0,
+    },
+    streakBadge: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 3,
+      backgroundColor: colors.orangeBg,
+      paddingHorizontal: 7,
+      paddingVertical: 3,
+      borderRadius: 20,
     },
     streakValue: {
-      fontSize: 12,
-      fontWeight: '600',
+      fontSize: 11,
+      fontWeight: '700',
       color: colors.orange,
     },
     dateValue: {
-      fontSize: 12,
+      fontSize: 11,
       fontWeight: '500',
       color: colors.muted,
     },
