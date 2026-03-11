@@ -13,8 +13,8 @@ const DEFAULT_HABITS: Habit[] = [
     iconColor: '#FF8A1F',
     createdAt: '2026-03-10T08:00:00.000Z',
     startDate: '2026-03-10',
-    endDate: null,
-    noEndDate: true,
+    endDate: '2026-06-10',
+    noEndDate: false,
   },
   {
     id: 'habit-2',
@@ -37,8 +37,8 @@ const DEFAULT_HABITS: Habit[] = [
     iconColor: '#A67CC5',
     createdAt: '2026-03-10T08:10:00.000Z',
     startDate: '2026-03-10',
-    endDate: null,
-    noEndDate: true,
+    endDate: '2026-04-30',
+    noEndDate: false,
   },
   {
     id: 'habit-4',
@@ -61,8 +61,8 @@ const DEFAULT_HABITS: Habit[] = [
     iconColor: '#8FB339',
     createdAt: '2026-03-10T08:20:00.000Z',
     startDate: '2026-03-10',
-    endDate: null,
-    noEndDate: true,
+    endDate: '2026-12-31',
+    noEndDate: false,
   },
   {
     id: 'habit-6',
@@ -96,7 +96,21 @@ async function ensureLocalSeed() {
   const data = await getLocalHabitData();
 
   if (data.habits.length > 0) {
-    return data;
+    // Mevcut habit'lerin endDate/noEndDate alanlarını DEFAULT_HABITS ile güncelle
+    const defaultMap = new Map(DEFAULT_HABITS.map((h) => [h.id, h]));
+    const mergedHabits = data.habits.map((habit) => {
+      const def = defaultMap.get(habit.id);
+      if (!def) return habit;
+      return {
+        ...habit,
+        startDate: def.startDate,
+        endDate: def.endDate,
+        noEndDate: def.noEndDate,
+      };
+    });
+    const mergedData = { ...data, habits: mergedHabits };
+    await saveLocalHabitData(mergedData);
+    return mergedData;
   }
 
   const seededData = {
@@ -125,6 +139,21 @@ export async function getHabits() {
 
   await setPlan(plan);
   return applyTodayCompletion(data.habits, data.entries);
+}
+
+export async function resetToDefaults() {
+  const seededData = {
+    habits: DEFAULT_HABITS,
+    entries: DEFAULT_HABITS.filter((habit) => habit.completed).map((habit) => ({
+      habitId: habit.id,
+      date: TODAY(),
+      completed: true,
+      updatedAt: new Date().toISOString(),
+    })),
+    updatedAt: new Date().toISOString(),
+  };
+  await saveLocalHabitData(seededData);
+  return seededData;
 }
 
 export async function addHabit(habit: Habit) {

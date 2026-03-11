@@ -18,9 +18,10 @@ import type { Habit } from '../types/habit';
 
 function formatDate(iso: string) {
   const d = new Date(iso);
-  const day = d.getDate().toString().padStart(2, '0');
-  const months = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
-  return `${day} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  const dd = d.getDate().toString().padStart(2, '0');
+  const mm = (d.getMonth() + 1).toString().padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
 }
 
 function calcStreak(habit: Habit): number {
@@ -49,7 +50,9 @@ function HabitDetailCard({ habit }: { habit: Habit }) {
     [habit.bgColor, colors, isDark]
   );
   const streak = calcStreak(habit);
+  const startLabel = formatDate(habit.startDate);
   const endLabel = habit.noEndDate ? 'Süresiz' : habit.endDate ? formatDate(habit.endDate) : 'Süresiz';
+  const hasEnd = !habit.noEndDate && !!habit.endDate;
 
   return (
     <View style={styles.cardWrap}>
@@ -62,13 +65,17 @@ function HabitDetailCard({ habit }: { habit: Habit }) {
         {/* ── İsim (flex: 1, ortada) ── */}
         <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
 
-        {/* ── Sağ blok: üstte 🔥 sayı, altta tarih ── */}
+        {/* ── Sağ blok: üstte 🔥 sayı, altta tarih bilgisi ── */}
         <View style={styles.rightBlock}>
           <View style={styles.streakBadge}>
             <Ionicons name="flame" size={12} color={colors.orange} />
             <Text style={styles.streakValue}>{streak}</Text>
           </View>
-          <Text style={styles.dateValue}>{endLabel}</Text>
+          <View style={styles.dateBlock}>
+            <Text style={styles.dateValue}>
+              {startLabel} - {hasEnd ? endLabel : 'Süresiz'}
+            </Text>
+          </View>
         </View>
       </View>
     </View>
@@ -174,8 +181,8 @@ function createStyles(colors: AppColors, isDark: boolean) {
       justifyContent: 'space-between',
       alignItems: 'center',
       paddingHorizontal: 20,
-      paddingTop: 16,
-      paddingBottom: 12,
+      paddingTop: 8,
+      paddingBottom: 10,
       backgroundColor: colors.bg,
     },
     title: {
@@ -284,8 +291,21 @@ function createStyles(colors: AppColors, isDark: boolean) {
       fontWeight: '700',
       color: colors.orange,
     },
+    dateBlock: {
+      alignItems: 'flex-end',
+      gap: 1,
+    },
+    dateRow: {
+      fontSize: 10,
+      color: colors.muted,
+    },
+    dateLabel: {
+      fontSize: 10,
+      fontWeight: '600',
+      color: colors.muted,
+    },
     dateValue: {
-      fontSize: 11,
+      fontSize: 10,
       fontWeight: '500',
       color: colors.muted,
     },
