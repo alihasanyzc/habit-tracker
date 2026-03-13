@@ -1,4 +1,4 @@
-# 🌿 Habit Tracker
+# Habition
 
 React Native / Expo ile geliştirilen alışkanlık takip uygulaması. Tasarım Figma Make ile oluşturuldu ve Figma MCP üzerinden Cursor'a aktarıldı.
 
@@ -18,7 +18,7 @@ React Native / Expo ile geliştirilen alışkanlık takip uygulaması. Tasarım 
 
 ## 🛠 Teknolojiler
 
-- [Expo SDK 55](https://expo.dev)
+- [Expo SDK 54](https://expo.dev)
 - [React Native](https://reactnative.dev)
 - [React Navigation](https://reactnavigation.org) — Bottom Tabs
 - [react-native-svg](https://github.com/software-mansion/react-native-svg) — Grafikler
@@ -29,11 +29,11 @@ React Native / Expo ile geliştirilen alışkanlık takip uygulaması. Tasarım 
 
 ---
 
-## 🚀 Kurulum
+## Kurulum
 
 ```bash
 # Bağımlılıkları yükle
-npm install
+npm ci
 
 # Geliştirme sunucusunu başlat
 npm start
@@ -49,10 +49,10 @@ npm run web      # Web tarayıcı
 
 ---
 
-## 📁 Proje Yapısı
+## Proje Yapısı
 
 ```
-habit/
+habition/
 ├── App.tsx                    # Giriş noktası
 ├── navigation/
 │   └── AppNavigator.tsx       # Bottom tab navigator
@@ -67,11 +67,10 @@ habit/
 
 ---
 
-## ⚙️ Gereksinimler
+## Gereksinimler
 
 - Node.js 18+
-- npm veya yarn
-- Expo CLI (`npm install -g expo-cli`)
+- npm
 - iOS: Xcode (simülatör için)
 - Android: Android Studio (emülatör için)
 - Fiziksel cihaz: [Expo Go](https://expo.dev/client) (güncel sürüm)

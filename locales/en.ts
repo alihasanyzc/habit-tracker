@@ -131,6 +131,8 @@ export default {
     newPasswordPlaceholder: 'Enter your new password...',
     password: 'Password',
     language: 'Language',
+    languageSelected: 'Selected language: %{language}',
+    languageDescription: 'App text updates immediately when you change this.',
   },
   theme: {
     light: 'Light',

@@ -1,38 +1,27 @@
 {
   "expo": {
-    "name": "habit",
-    "slug": "habit",
+    "name": "Habition",
+    "slug": "habition",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./logo.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.samed64.habit",
+      "bundleIdentifier": "com.habition",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      },
-      "predictiveBackGestureEnabled": false
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
+    "owner": "samed64",
     "extra": {
       "eas": {
-        "projectId": "7f740e71-5d31-4964-a358-a0e3dac19bbe"
+        "projectId": "a22b3d25-1d53-4455-86a7-b2c3f759b44c"
       }
     }
   }

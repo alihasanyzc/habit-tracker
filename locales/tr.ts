@@ -131,6 +131,8 @@ export default {
     newPasswordPlaceholder: 'Yeni şifrenizi girin...',
     password: 'Şifre',
     language: 'Dil',
+    languageSelected: 'Seçili dil: %{language}',
+    languageDescription: 'Uygulama metinleri bu seçimle anında güncellenir.',
   },
   theme: {
     light: 'Açık',

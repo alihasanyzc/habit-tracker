@@ -21,9 +21,9 @@ import {
 } from '../constants/colors';
 import { useLanguage, type AppLanguage } from '../providers/LanguageProvider';
 
-const LANG_OPTIONS: Array<{ value: AppLanguage; label: string; flag: string }> = [
-  { value: 'tr', label: 'Türkçe', flag: '🇹🇷' },
-  { value: 'en', label: 'English', flag: '🇬🇧' },
+const LANG_OPTIONS: Array<{ value: AppLanguage; label: string }> = [
+  { value: 'tr', label: 'Türkçe' },
+  { value: 'en', label: 'English' },
 ];
 
 export default function ProfileScreen() {
@@ -43,6 +43,7 @@ export default function ProfileScreen() {
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const currentLanguage = LANG_OPTIONS.find(option => option.value === language) ?? LANG_OPTIONS[0];
 
   const updateField = (key: keyof typeof form, value: string) =>
     setForm(prev => ({ ...prev, [key]: value }));
@@ -236,23 +237,44 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('profile.language')}</Text>
           <View style={styles.listCard}>
-            <View style={styles.langRow}>
-              {LANG_OPTIONS.map((opt) => {
-                const isSelected = opt.value === language;
-                return (
-                  <TouchableOpacity
-                    key={opt.value}
-                    style={[styles.langOption, isSelected && styles.langOptionSelected]}
-                    onPress={() => void setLanguage(opt.value)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.langFlag}>{opt.flag}</Text>
-                    <Text style={[styles.langLabel, isSelected && styles.langLabelSelected]}>
-                      {opt.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+            <View style={styles.row}>
+              <View style={styles.rowIcon}>
+                <Feather name="globe" size={16} color={colors.orange} />
+              </View>
+              <View style={styles.languageRowContent}>
+                <View style={styles.languageHeader}>
+                  <Text style={styles.rowLabel}>{t('profile.language')}</Text>
+                  <Text style={styles.languageHint}>
+                  {t('profile.languageSelected', { language: currentLanguage.label })}
+                  </Text>
+                </View>
+                <View style={styles.languageSegment}>
+                  {LANG_OPTIONS.map((option) => {
+                    const selected = option.value === language;
+
+                    return (
+                      <TouchableOpacity
+                        key={option.value}
+                        onPress={() => void setLanguage(option.value)}
+                        activeOpacity={0.85}
+                        style={[
+                          styles.languageSegmentButton,
+                          selected && styles.languageSegmentButtonSelected,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.languageSegmentLabel,
+                            selected && styles.languageSegmentLabelSelected,
+                          ]}
+                        >
+                          {option.label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
             </View>
           </View>
         </View>
@@ -407,35 +429,45 @@ function createStyles(colors: AppColors, isDark: boolean) {
       fontWeight: '600' as const,
       color: '#fff',
     },
-    langRow: {
+    languageRowContent: {
+      flex: 1,
+    },
+    languageHeader: {
+      flexDirection: 'row' as const,
+      alignItems: 'baseline' as const,
+      justifyContent: 'space-between' as const,
+      gap: 12,
+    },
+    languageHint: {
+      fontSize: 12,
+      color: colors.muted,
+    },
+    languageSegment: {
+      marginTop: 12,
       flexDirection: 'row' as const,
       gap: 8,
-      padding: 8,
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: 14,
+      padding: 4,
     },
-    langOption: {
+    languageSegmentButton: {
       flex: 1,
-      flexDirection: 'row' as const,
+      minHeight: 40,
+      borderRadius: 10,
       alignItems: 'center' as const,
       justifyContent: 'center' as const,
-      gap: 8,
-      paddingVertical: 12,
-      borderRadius: 16,
-      backgroundColor: colors.surfaceAlt,
     },
-    langOptionSelected: {
-      backgroundColor: isDark ? 'rgba(255,138,31,0.12)' : '#FFF4EA',
-      borderWidth: 1.5,
-      borderColor: colors.orange,
+    languageSegmentButtonSelected: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: isDark ? colors.border : '#F2E2D4',
     },
-    langFlag: {
-      fontSize: 18,
-    },
-    langLabel: {
+    languageSegmentLabel: {
       fontSize: 14,
       fontWeight: '600' as const,
-      color: colors.text,
+      color: colors.muted,
     },
-    langLabelSelected: {
+    languageSegmentLabelSelected: {
       color: colors.orange,
     },
   });
