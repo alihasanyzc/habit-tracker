@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,70 +6,127 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  Alert,
+  Animated,
+  Dimensions,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import ScreenHeader from '../components/ScreenHeader';
 import { getThemedAccentSurface, useAppColors, useIsDark, type AppColors } from '../constants/colors';
-import { getHabits } from '../utils/habitRepository';
-import type { Habit } from '../types/habit';
+import { deleteHabit, getHabitData } from '../utils/habitRepository';
+import { getHabitStreak } from '../utils/habitMetrics';
+import { useToast } from '../components/ToastProvider';
+import type { Habit, HabitEntry } from '../types/habit';
+import { useLanguage } from '../providers/LanguageProvider';
 
-// ─── helpers ────────────────────────────────────────────────────────────────
+const SCREEN_W = Dimensions.get('window').width;
+const ACTION_WIDTH = 72;
+const ACTIONS_TOTAL = ACTION_WIDTH * 2;
 
-function formatDate(iso: string) {
-  const d = new Date(iso);
-  const day = d.getDate().toString().padStart(2, '0');
-  const month = (d.getMonth() + 1).toString().padStart(2, '0');
-  const year = d.getFullYear();
-  return `${day}/${month}/${year}`;
-}
+// ─── Swipeable Card ─────────────────────────────────────────────────────────
 
-function calcStreak(habit: Habit): number {
-  // Gerçek streak verisi habitRepository'ye bağlandığında buraya entries geçilebilir.
-  // Şimdilik createdAt -> bugün arası gün sayısını döndürür (demo).
-  const start = new Date(habit.startDate);
-  const now = new Date();
-  const diff = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-  return Math.max(1, diff + 1);
-}
-
-function streakLabel(days: number) {
-  if (days >= 365) return `${Math.floor(days / 365)} yıl`;
-  if (days >= 30) return `${Math.floor(days / 30)} ay`;
-  return `${days} gün`;
-}
-
-// ─── HabitDetailCard ────────────────────────────────────────────────────────
-
-function HabitDetailCard({ habit }: { habit: Habit }) {
+function HabitDetailCard({
+  habit,
+  entries,
+  onEdit,
+  onDelete,
+}: {
+  habit: Habit;
+  entries: HabitEntry[];
+  onEdit: (h: Habit) => void;
+  onDelete: (h: Habit) => void;
+}) {
   const colors = useAppColors();
   const isDark = useIsDark();
+  const { t } = useLanguage();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const surface = useMemo(
     () => getThemedAccentSurface(habit.bgColor, colors, isDark, 0.8),
     [habit.bgColor, colors, isDark]
   );
-  const streak = calcStreak(habit);
+  const streak = getHabitStreak(habit, entries);
+
+  const translateX = useRef(new Animated.Value(0)).current;
+  const startX = useRef(0);
+  const currentX = useRef(0);
+
+  const onTouchStart = (e: any) => {
+    startX.current = e.nativeEvent.pageX;
+  };
+
+  const onTouchMove = (e: any) => {
+    const dx = e.nativeEvent.pageX - startX.current;
+    const clamped = Math.max(-ACTIONS_TOTAL, Math.min(0, dx + currentX.current));
+    translateX.setValue(clamped);
+  };
+
+  const onTouchEnd = (e: any) => {
+    const dx = e.nativeEvent.pageX - startX.current;
+    const next = dx + currentX.current;
+    const target = next < -ACTIONS_TOTAL / 2 ? -ACTIONS_TOTAL : 0;
+    currentX.current = target;
+    Animated.spring(translateX, {
+      toValue: target,
+      useNativeDriver: true,
+      tension: 180,
+      friction: 22,
+    }).start();
+  };
+
+  const closeSwipe = () => {
+    currentX.current = 0;
+    Animated.spring(translateX, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 180,
+      friction: 22,
+    }).start();
+  };
 
   return (
     <View style={styles.cardWrap}>
-      <View style={[styles.card, { backgroundColor: surface }]}>
-        {/* ── İkon ── */}
+      {/* ── Action buttons behind the card ── */}
+      <View style={styles.actionsRow}>
+        <TouchableOpacity
+          style={[styles.actionBtn, { backgroundColor: colors.orange }]}
+          activeOpacity={0.8}
+          onPress={() => { closeSwipe(); onEdit(habit); }}
+        >
+          <MaterialCommunityIcons name="pencil-outline" size={20} color="#FFF" />
+          <Text style={styles.actionLabel}>{t('common.edit')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionBtn, { backgroundColor: colors.red }]}
+          activeOpacity={0.8}
+          onPress={() => { closeSwipe(); onDelete(habit); }}
+        >
+          <MaterialCommunityIcons name="trash-can-outline" size={20} color="#FFF" />
+          <Text style={styles.actionLabel}>{t('common.delete')}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* ── Card (slides left) ── */}
+      <Animated.View
+        style={[styles.card, { backgroundColor: surface, transform: [{ translateX }] }]}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderStart={onTouchStart}
+        onResponderMove={onTouchMove}
+        onResponderRelease={onTouchEnd}
+      >
         <View style={styles.emojiBox}>
           <MaterialCommunityIcons name={habit.icon as any} size={22} color={habit.iconColor} />
         </View>
-
-        {/* ── İsim (flex: 1, ortada) ── */}
         <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
-
-        {/* ── Sağ blok: 🔥 sayı ── */}
         <View style={styles.rightBlock}>
           <View style={styles.streakBadge}>
             <Ionicons name="flame" size={12} color={colors.orange} />
             <Text style={styles.streakValue}>{streak}</Text>
           </View>
         </View>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -79,18 +136,55 @@ function HabitDetailCard({ habit }: { habit: Habit }) {
 export default function HabitScreen() {
   const colors = useAppColors();
   const isDark = useIsDark();
+  const { t } = useLanguage();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
-  const insets = useSafeAreaInsets();
+  const { showToast } = useToast();
+  const navigation = useNavigation<any>();
   const [habits, setHabits] = useState<Habit[]>([]);
+  const [entries, setEntries] = useState<HabitEntry[]>([]);
   const [filter, setFilter] = useState<'all' | 'active' | 'done'>('all');
+
+  const reload = useCallback(() => {
+    getHabitData().then((data) => {
+      setHabits(data.habits);
+      setEntries(data.entries);
+    });
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      getHabits().then(h => { if (active) setHabits(h); });
+      getHabitData().then((data) => {
+        if (!active) return;
+        setHabits(data.habits);
+        setEntries(data.entries);
+      });
       return () => { active = false; };
     }, [])
   );
+
+  const handleDelete = useCallback((habit: Habit) => {
+    Alert.alert(
+      t('habit.deleteHabit'),
+      t('habit.deleteConfirm', { name: habit.name }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            await deleteHabit(habit.id);
+            reload();
+            showToast({ type: 'success', title: t('habit.deleted'), message: t('habit.deletedMsg', { name: habit.name }) });
+          },
+        },
+      ]
+    );
+  }, [reload, showToast]);
+
+  const handleEdit = useCallback((habit: Habit) => {
+    navigation.navigate('Create', { habit });
+  }, [navigation]);
 
   const filtered = useMemo(() => {
     if (filter === 'active') return habits.filter(h => !h.completed);
@@ -102,22 +196,17 @@ export default function HabitScreen() {
   const total = habits.length;
 
   const FILTERS: { key: 'all' | 'active' | 'done'; label: string }[] = [
-    { key: 'all', label: 'Tümü' },
-    { key: 'active', label: 'Devam Eden' },
-    { key: 'done', label: 'Tamamlanan' },
+    { key: 'all', label: t('habit.all') },
+    { key: 'active', label: t('habit.active') },
+    { key: 'done', label: t('habit.done') },
   ];
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
-      {/* ── Başlık ── */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Alışkanlıklarım</Text>
-          <Text style={styles.subtitle}>
-            {completedCount}/{total} bugün tamamlandı
-          </Text>
-        </View>
-      </View>
+    <SafeAreaView style={styles.root} edges={['top']}>
+      <ScreenHeader
+        title={t('habit.myHabits')}
+        subtitle={t('habit.completedToday', { completed: completedCount, total })}
+      />
 
       {/* ── Filtre pill'leri ── */}
       <View style={styles.filterRow}>
@@ -141,6 +230,11 @@ export default function HabitScreen() {
         ))}
       </View>
 
+      {/* ── Swipe ipucu ── */}
+      {total > 0 && (
+        <Text style={styles.swipeHint}>{t('habit.swipeHint')}</Text>
+      )}
+
       {/* ── Liste ── */}
       <ScrollView
         style={styles.scroll}
@@ -152,11 +246,20 @@ export default function HabitScreen() {
             <Text style={styles.emptyText}>Alışkanlık bulunamadı</Text>
           </View>
         ) : (
-          filtered.map(h => <HabitDetailCard key={h.id} habit={h} />)
+          filtered.map(h => (
+            <HabitDetailCard
+              key={h.id}
+              habit={h}
+              entries={entries}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          ))
         )}
         <View style={{ height: 24 }} />
       </ScrollView>
-    </View>
+
+    </SafeAreaView>
   );
 }
 
@@ -168,40 +271,6 @@ function createStyles(colors: AppColors, isDark: boolean) {
       flex: 1,
       backgroundColor: colors.bg,
     },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingTop: 8,
-      paddingBottom: 10,
-      backgroundColor: colors.bg,
-    },
-    title: {
-      fontSize: 24,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    subtitle: {
-      fontSize: 13,
-      color: colors.muted,
-      marginTop: 3,
-    },
-    progressCircle: {
-      width: 52,
-      height: 52,
-      borderRadius: 26,
-      borderWidth: 3,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.bg,
-    },
-    progressPct: {
-      fontSize: 13,
-      fontWeight: '700',
-      color: colors.orange,
-    },
-
     filterRow: {
       flexDirection: 'row',
       gap: 8,
@@ -220,6 +289,13 @@ function createStyles(colors: AppColors, isDark: boolean) {
       color: colors.muted,
     },
 
+    swipeHint: {
+      fontSize: 11,
+      color: colors.muted,
+      textAlign: 'center',
+      marginBottom: 4,
+    },
+
     scroll: {
       flex: 1,
       backgroundColor: colors.bg,
@@ -232,6 +308,30 @@ function createStyles(colors: AppColors, isDark: boolean) {
     cardWrap: {
       paddingHorizontal: 16,
       marginBottom: 7,
+      overflow: 'hidden',
+      borderRadius: 16,
+      marginHorizontal: 0,
+    },
+    actionsRow: {
+      position: 'absolute',
+      right: 16,
+      top: 0,
+      bottom: 0,
+      flexDirection: 'row',
+      alignItems: 'stretch',
+      borderRadius: 16,
+      overflow: 'hidden',
+    },
+    actionBtn: {
+      width: ACTION_WIDTH,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 3,
+    },
+    actionLabel: {
+      fontSize: 10,
+      fontWeight: '600',
+      color: '#FFF',
     },
     card: {
       borderRadius: 16,
@@ -283,24 +383,6 @@ function createStyles(colors: AppColors, isDark: boolean) {
       fontWeight: '700',
       color: colors.orange,
     },
-    dateBlock: {
-      alignItems: 'flex-end',
-      gap: 1,
-    },
-    dateRow: {
-      fontSize: 10,
-      color: colors.muted,
-    },
-    dateLabel: {
-      fontSize: 10,
-      fontWeight: '600',
-      color: colors.muted,
-    },
-    dateValue: {
-      fontSize: 10,
-      fontWeight: '500',
-      color: colors.muted,
-    },
 
     emptyWrap: {
       alignItems: 'center',
@@ -312,5 +394,6 @@ function createStyles(colors: AppColors, isDark: boolean) {
       fontSize: 14,
       color: colors.muted,
     },
+
   });
 }

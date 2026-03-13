@@ -15,29 +15,7 @@ import {
   useIsDark,
   type AppColors,
 } from '../constants/colors';
-
-const FEATURES = [
-  {
-    icon: 'infinity' as const,
-    title: 'Sınırsız Alışkanlık',
-    desc: 'Dilediğin kadar alışkanlık oluştur ve takip et.',
-  },
-  {
-    icon: 'chart-timeline-variant-shimmer' as const,
-    title: 'Detaylı İstatistikler',
-    desc: 'Gelişmiş grafikler ve haftalık/aylık analizler.',
-  },
-  {
-    icon: 'bell-ring-outline' as const,
-    title: 'Akıllı Hatırlatıcılar',
-    desc: 'Kişiselleştirilmiş bildirimlerle hiçbir günü kaçırma.',
-  },
-  {
-    icon: 'cloud-sync-outline' as const,
-    title: 'Bulut Yedekleme',
-    desc: 'Verilerini güvenle yedekle, cihazlar arası senkronize et.',
-  },
-];
+import { useLanguage } from '../providers/LanguageProvider';
 
 interface PlusScreenProps {
   onClose: () => void;
@@ -46,8 +24,16 @@ interface PlusScreenProps {
 export default function PlusScreen({ onClose }: PlusScreenProps) {
   const colors = useAppColors();
   const isDark = useIsDark();
+  const { t } = useLanguage();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
+
+  const FEATURES = useMemo(() => [
+    { icon: 'infinity' as const, title: t('plus.unlimitedHabits'), desc: t('plus.unlimitedHabitsDesc') },
+    { icon: 'chart-timeline-variant-shimmer' as const, title: t('plus.detailedStats'), desc: t('plus.detailedStatsDesc') },
+    { icon: 'bell-ring-outline' as const, title: t('plus.smartReminders'), desc: t('plus.smartRemindersDesc') },
+    { icon: 'cloud-sync-outline' as const, title: t('plus.cloudBackup'), desc: t('plus.cloudBackupDesc') },
+  ], [t]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -74,9 +60,9 @@ export default function PlusScreen({ onClose }: PlusScreenProps) {
           <View style={styles.heroIconWrap}>
             <MaterialCommunityIcons name="crown" size={36} color={colors.orange} />
           </View>
-          <Text style={styles.heroTitle}>Habition Plus</Text>
+          <Text style={styles.heroTitle}>{t('plus.title')}</Text>
           <Text style={styles.heroSubtitle}>
-            Alışkanlıklarını bir üst seviyeye taşı.{'\n'}Tüm premium özelliklerin kilidini aç.
+            {t('plus.subtitle')}
           </Text>
         </LinearGradient>
 
@@ -88,20 +74,20 @@ export default function PlusScreen({ onClose }: PlusScreenProps) {
           >
             {selectedPlan === 'yearly' && (
               <View style={styles.bestBadge}>
-                <Text style={styles.bestBadgeText}>En Avantajlı</Text>
+                <Text style={styles.bestBadgeText}>{t('plus.bestValue')}</Text>
               </View>
             )}
             <Text style={[styles.planDuration, selectedPlan === 'yearly' && styles.planDurationActive]}>
-              Yıllık
+              {t('plus.yearly')}
             </Text>
             <Text style={[styles.planPrice, selectedPlan === 'yearly' && styles.planPriceActive]}>
               ₺249,99
             </Text>
             <Text style={[styles.planUnit, selectedPlan === 'yearly' && styles.planUnitActive]}>
-              /yıl
+              {t('plus.perYear')}
             </Text>
             <Text style={[styles.planSave, selectedPlan === 'yearly' && styles.planSaveActive]}>
-              Aylık ₺20,83 — %40 tasarruf
+              {t('plus.yearlySaving')}
             </Text>
           </TouchableOpacity>
 
@@ -111,19 +97,19 @@ export default function PlusScreen({ onClose }: PlusScreenProps) {
             activeOpacity={0.8}
           >
             <Text style={[styles.planDuration, selectedPlan === 'monthly' && styles.planDurationActive]}>
-              Aylık
+              {t('plus.monthly')}
             </Text>
             <Text style={[styles.planPrice, selectedPlan === 'monthly' && styles.planPriceActive]}>
               ₺34,99
             </Text>
             <Text style={[styles.planUnit, selectedPlan === 'monthly' && styles.planUnitActive]}>
-              /ay
+              {t('plus.perMonth')}
             </Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Plus ile Neler Kazanırsın?</Text>
+          <Text style={styles.sectionTitle}>{t('plus.featuresTitle')}</Text>
           <View style={styles.featureList}>
             {FEATURES.map((feature, index) => (
               <View
@@ -152,23 +138,22 @@ export default function PlusScreen({ onClose }: PlusScreenProps) {
             >
               <MaterialCommunityIcons name="crown" size={20} color="#FFFFFF" />
               <Text style={styles.ctaText}>
-                {selectedPlan === 'yearly' ? 'Yıllık Plus\'a Abone Ol' : 'Aylık Plus\'a Abone Ol'}
+                {selectedPlan === 'yearly' ? t('plus.subscribeYearly') : t('plus.subscribeMonthly')}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
 
           <Text style={styles.ctaNote}>
-            İstediğin zaman iptal edebilirsin. 7 gün ücretsiz deneme ile başla.
+            {t('plus.trialNote')}
           </Text>
         </View>
 
         <TouchableOpacity style={styles.restoreBtn} activeOpacity={0.7}>
-          <Text style={styles.restoreText}>Satın Alımı Geri Yükle</Text>
+          <Text style={styles.restoreText}>{t('plus.restorePurchase')}</Text>
         </TouchableOpacity>
 
         <Text style={styles.legalText}>
-          Abonelik, onay üzerine Apple ID hesabınızdan tahsil edilir. Mevcut dönem sona ermeden
-          en az 24 saat önce iptal edilmezse otomatik olarak yenilenir.
+          {t('plus.legalNote')}
         </Text>
       </ScrollView>
     </SafeAreaView>

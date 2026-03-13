@@ -19,19 +19,26 @@ import {
   useIsDark,
   type AppColors,
 } from '../constants/colors';
+import { useLanguage, type AppLanguage } from '../providers/LanguageProvider';
 
-const PROFILE_FIELDS = [
-  { icon: 'user' as const, label: 'Ad Soyad', key: 'name' as const, placeholder: 'Adınızı girin...', keyboard: 'default' as const },
-  { icon: 'mail' as const, label: 'E-posta', key: 'email' as const, placeholder: 'E-posta adresinizi girin...', keyboard: 'email-address' as const },
-  { icon: 'phone' as const, label: 'Telefon', key: 'phone' as const, placeholder: 'Telefon numaranızı girin...', keyboard: 'phone-pad' as const },
+const LANG_OPTIONS: Array<{ value: AppLanguage; label: string; flag: string }> = [
+  { value: 'tr', label: 'Türkçe', flag: '🇹🇷' },
+  { value: 'en', label: 'English', flag: '🇬🇧' },
 ];
 
 export default function ProfileScreen() {
   const colors = useAppColors();
   const isDark = useIsDark();
+  const { t, language, setLanguage } = useLanguage();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const [plusVisible, setPlusVisible] = useState(false);
   const [editingSection, setEditingSection] = useState<'profile' | 'security' | null>(null);
+
+  const PROFILE_FIELDS = useMemo(() => [
+    { icon: 'user' as const, label: t('profile.fullName'), key: 'name' as const, placeholder: t('profile.fullNamePlaceholder'), keyboard: 'default' as const },
+    { icon: 'mail' as const, label: t('profile.email'), key: 'email' as const, placeholder: t('profile.emailPlaceholder'), keyboard: 'email-address' as const },
+    { icon: 'phone' as const, label: t('profile.phone'), key: 'phone' as const, placeholder: t('profile.phonePlaceholder'), keyboard: 'phone-pad' as const },
+  ], [t]);
 
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
   const [currentPassword, setCurrentPassword] = useState('');
@@ -51,7 +58,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScreenHeader title="Profil" subtitle="Temel hesap bilgileri ve görünüm ayarları" />
+      <ScreenHeader title={t('profile.profile')} subtitle={t('profile.subtitle')} />
 
       <ScrollView
         style={styles.scroll}
@@ -76,8 +83,8 @@ export default function ProfileScreen() {
               <MaterialCommunityIcons name="crown" size={22} color={colors.orange} />
             </View>
             <View style={styles.plusCopy}>
-              <Text style={styles.plusTitle}>Plus'a Yükselt</Text>
-              <Text style={styles.plusDesc}>Sınırsız alışkanlık, detaylı istatistik ve daha fazlası</Text>
+              <Text style={styles.plusTitle}>{t('plus.upgradeTitle')}</Text>
+              <Text style={styles.plusDesc}>{t('plus.upgradeDesc')}</Text>
             </View>
             <Feather name="chevron-right" size={20} color={colors.orange} />
           </LinearGradient>
@@ -94,7 +101,7 @@ export default function ProfileScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Temel Bilgiler</Text>
+            <Text style={styles.sectionTitle}>{t('profile.basicInfo')}</Text>
             <TouchableOpacity
               onPress={() => setEditingSection(editingSection === 'profile' ? null : 'profile')}
               hitSlop={8}
@@ -130,7 +137,7 @@ export default function ProfileScreen() {
                     />
                   ) : (
                     <Text style={[styles.rowValue, form[field.key] && styles.rowValueFilled]}>
-                      {form[field.key] || 'Henüz eklenmedi'}
+                      {form[field.key] || t('profile.notAdded')}
                     </Text>
                   )}
                 </View>
@@ -139,10 +146,10 @@ export default function ProfileScreen() {
             {editingSection === 'profile' && (
               <View style={styles.cardActions}>
                 <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
-                  <Text style={styles.cancelBtnText}>İptal</Text>
+                  <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-                  <Text style={styles.saveBtnText}>Kaydet</Text>
+                  <Text style={styles.saveBtnText}>{t('common.save')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -150,13 +157,13 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Görünüm</Text>
+          <Text style={styles.sectionTitle}>{t('profile.appearance')}</Text>
           <ProfileThemeCard />
         </View>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Güvenlik</Text>
+            <Text style={styles.sectionTitle}>{t('profile.security')}</Text>
             <TouchableOpacity
               onPress={() => setEditingSection(editingSection === 'security' ? null : 'security')}
               hitSlop={8}
@@ -176,11 +183,11 @@ export default function ProfileScreen() {
                     <Feather name="lock" size={16} color={colors.orange} />
                   </View>
                   <View style={styles.rowCopy}>
-                    <Text style={styles.rowLabel}>Mevcut Şifre</Text>
+                    <Text style={styles.rowLabel}>{t('profile.currentPassword')}</Text>
                     <TextInput
                       value={currentPassword}
                       onChangeText={setCurrentPassword}
-                      placeholder="Mevcut şifrenizi girin..."
+                      placeholder={t('profile.currentPasswordPlaceholder')}
                       placeholderTextColor={colors.muted}
                       secureTextEntry
                       style={styles.input}
@@ -192,11 +199,11 @@ export default function ProfileScreen() {
                     <Feather name="key" size={16} color={colors.orange} />
                   </View>
                   <View style={styles.rowCopy}>
-                    <Text style={styles.rowLabel}>Yeni Şifre</Text>
+                    <Text style={styles.rowLabel}>{t('profile.newPassword')}</Text>
                     <TextInput
                       value={newPassword}
                       onChangeText={setNewPassword}
-                      placeholder="Yeni şifrenizi girin..."
+                      placeholder={t('profile.newPasswordPlaceholder')}
                       placeholderTextColor={colors.muted}
                       secureTextEntry
                       style={styles.input}
@@ -205,10 +212,10 @@ export default function ProfileScreen() {
                 </View>
                 <View style={styles.cardActions}>
                   <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
-                    <Text style={styles.cancelBtnText}>İptal</Text>
+                    <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-                    <Text style={styles.saveBtnText}>Kaydet</Text>
+                    <Text style={styles.saveBtnText}>{t('common.save')}</Text>
                   </TouchableOpacity>
                 </View>
               </>
@@ -218,11 +225,35 @@ export default function ProfileScreen() {
                   <Feather name="lock" size={16} color={colors.orange} />
                 </View>
                 <View style={styles.rowCopy}>
-                  <Text style={styles.rowLabel}>Şifre</Text>
+                  <Text style={styles.rowLabel}>{t('profile.password')}</Text>
                   <Text style={styles.rowValue}>••••••••</Text>
                 </View>
               </View>
             )}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('profile.language')}</Text>
+          <View style={styles.listCard}>
+            <View style={styles.langRow}>
+              {LANG_OPTIONS.map((opt) => {
+                const isSelected = opt.value === language;
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    style={[styles.langOption, isSelected && styles.langOptionSelected]}
+                    onPress={() => void setLanguage(opt.value)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.langFlag}>{opt.flag}</Text>
+                    <Text style={[styles.langLabel, isSelected && styles.langLabelSelected]}>
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -375,6 +406,37 @@ function createStyles(colors: AppColors, isDark: boolean) {
       fontSize: 14,
       fontWeight: '600' as const,
       color: '#fff',
+    },
+    langRow: {
+      flexDirection: 'row' as const,
+      gap: 8,
+      padding: 8,
+    },
+    langOption: {
+      flex: 1,
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      gap: 8,
+      paddingVertical: 12,
+      borderRadius: 16,
+      backgroundColor: colors.surfaceAlt,
+    },
+    langOptionSelected: {
+      backgroundColor: isDark ? 'rgba(255,138,31,0.12)' : '#FFF4EA',
+      borderWidth: 1.5,
+      borderColor: colors.orange,
+    },
+    langFlag: {
+      fontSize: 18,
+    },
+    langLabel: {
+      fontSize: 14,
+      fontWeight: '600' as const,
+      color: colors.text,
+    },
+    langLabelSelected: {
+      color: colors.orange,
     },
   });
 }

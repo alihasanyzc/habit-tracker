@@ -5,15 +5,18 @@ import AppNavigator from './navigation/AppNavigator';
 import { ToastProvider } from './components/ToastProvider';
 import { useAppColors, useIsDark } from './constants/colors';
 import { ThemeProvider } from './providers/ThemeProvider';
+import { LanguageProvider } from './providers/LanguageProvider';
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <ToastProvider>
-          <AppContent />
-        </ToastProvider>
-      </ThemeProvider>
+      <LanguageProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <AppContent />
+          </ToastProvider>
+        </ThemeProvider>
+      </LanguageProvider>
     </SafeAreaProvider>
   );
 }

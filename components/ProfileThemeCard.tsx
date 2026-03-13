@@ -9,23 +9,25 @@ import {
   type AppColors,
 } from '../constants/colors';
 import { useAppTheme } from '../providers/ThemeProvider';
+import { useLanguage } from '../providers/LanguageProvider';
 import type { ThemePreference } from '../utils/storage';
-
-const THEME_OPTIONS: Array<{
-  value: ThemePreference;
-  label: string;
-  icon: React.ComponentProps<typeof Feather>['name'];
-}> = [
-  { value: 'light', label: 'Açık', icon: 'sun' },
-  { value: 'dark', label: 'Koyu', icon: 'moon' },
-  { value: 'system', label: 'Sistem', icon: 'smartphone' },
-];
 
 export default function ProfileThemeCard() {
   const colors = useAppColors();
   const isDark = useIsDark();
   const { themePreference, resolvedScheme, setThemePreference } = useAppTheme();
+  const { t } = useLanguage();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+
+  const THEME_OPTIONS: Array<{
+    value: ThemePreference;
+    label: string;
+    icon: React.ComponentProps<typeof Feather>['name'];
+  }> = useMemo(() => [
+    { value: 'light', label: t('theme.light'), icon: 'sun' },
+    { value: 'dark', label: t('theme.dark'), icon: 'moon' },
+    { value: 'system', label: t('theme.system'), icon: 'smartphone' },
+  ], [t]);
 
   return (
     <View style={styles.card}>
@@ -44,7 +46,7 @@ export default function ProfileThemeCard() {
             <Pressable
               key={option.value}
               accessibilityRole="button"
-              accessibilityLabel={`${option.label} tema`}
+              accessibilityLabel={t('theme.themeLabel', { option: option.label })}
               accessibilityState={{ selected: isSelected }}
               style={[
                 styles.option,

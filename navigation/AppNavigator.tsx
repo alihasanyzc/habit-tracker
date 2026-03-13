@@ -15,6 +15,7 @@ import CreateScreen from '../screens/CreateScreen';
 import HabitScreen from '../screens/HabitScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import { useAppColors, useIsDark, type AppColors } from '../constants/colors';
+import { useLanguage } from '../providers/LanguageProvider';
 
 const Tab = createBottomTabNavigator();
 
@@ -30,6 +31,7 @@ const ICONS: Record<string, { active: IoniconsName; inactive: IoniconsName }> = 
 function CustomTabBar({ state, navigation }: any) {
   const colors = useAppColors();
   const isDark = useIsDark();
+  const { t } = useLanguage();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   return (
@@ -52,16 +54,16 @@ function CustomTabBar({ state, navigation }: any) {
               <View style={[styles.centerBtn, isFocused && styles.centerBtnActive]}>
                 <Ionicons name="add" size={26} color={colors.white} />
               </View>
-              <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>Ekle</Text>
+              <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>{t('navigation.add')}</Text>
             </TouchableOpacity>
           );
         }
 
         const labels: Record<string, string> = {
-          Home: 'Ana Sayfa',
-          Stats: 'İstatistik',
-          Habit: 'Alışkanlıklar',
-          Profile: 'Profil',
+          Home: t('navigation.home'),
+          Stats: t('navigation.statistics'),
+          Habit: t('navigation.habits'),
+          Profile: t('navigation.profile'),
         };
 
         const iconName = icon && typeof icon === 'object'

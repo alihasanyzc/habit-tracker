@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Modal, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Modal, TouchableOpacity, StyleSheet, Platform, KeyboardAvoidingView } from 'react-native';
 import { useAppColors, useIsDark, type AppColors } from '../constants/colors';
 
 interface BottomSheetProps {
@@ -18,11 +18,16 @@ export default function BottomSheet({ visible, onClose, maxHeight, children }: B
 
   return (
     <Modal transparent animationType="slide" visible={visible} onRequestClose={onClose}>
-      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose} />
-      <View style={[styles.sheet, maxHeight ? { maxHeight } : undefined]}>
-        <View style={styles.handle} />
-        {children}
-      </View>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose} />
+        <View style={[styles.sheet, maxHeight ? { maxHeight } : undefined]}>
+          <View style={styles.handle} />
+          {children}
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

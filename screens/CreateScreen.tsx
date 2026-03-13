@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import ScreenHeader from '../components/ScreenHeader';
 import BottomSheet from '../components/BottomSheet';
 import PillTabs from '../components/PillTabs';
@@ -14,7 +14,8 @@ import { useAppColors, useIsDark, type AppColors } from '../constants/colors';
 import { HabitCard } from './HomeScreen';
 import { useToast } from '../components/ToastProvider';
 import type { Habit } from '../types/habit';
-import { addHabit } from '../utils/habitRepository';
+import { addHabit, updateHabit } from '../utils/habitRepository';
+import { useLanguage } from '../providers/LanguageProvider';
 
 const SCREEN_H = Dimensions.get('window').height;
 const ICON_PICKER_GLYPH_SIZE = 20;
@@ -54,13 +55,7 @@ const COLORS = [
   '#1A5C4C', '#5B9E6F', '#C2A84D', '#F5C523', '#8E9EC0', '#8BC562',
 ];
 
-// ── Ay isimleri ────────────────────────────────────────
-const MONTH_NAMES = [
-  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
-];
-const DAY_LABELS = ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'];
-const DAY_NAMES = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+// Date arrays are now sourced from i18n via useLanguage()
 
 // ── Seçilen rengi pastel arka plana dönüştür (HomeScreen pattern) ──
 function lightenColor(hex: string, mix = 0.82): string {
@@ -74,8 +69,8 @@ function lightenColor(hex: string, mix = 0.82): string {
 }
 
 // ── Tarih formatlama ────────────────────────────────────
-function formatDate(d: Date) {
-  return `${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+function formatDate(d: Date, months: string[]) {
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 function isSameDay(left: Date, right: Date) {
@@ -101,6 +96,9 @@ function CalendarSheet({ visible, selectedDate, onConfirm, onCancel }: {
 }) {
   const colors = useAppColors();
   const styles = useThemedStyles();
+  const { t } = useLanguage();
+  const MONTH_NAMES = t('dates.months') as unknown as string[];
+  const DAY_LABELS = t('dates.weekdaysCalendar') as unknown as string[];
   const [viewDate, setViewDate] = useState(new Date(selectedDate));
 
   useEffect(() => {
@@ -137,7 +135,7 @@ function CalendarSheet({ visible, selectedDate, onConfirm, onCancel }: {
     <BottomSheet visible={visible} onClose={onCancel} maxHeight={SCREEN_H * 0.58}>
       <View style={styles.calendarSheetContent}>
         <View style={styles.iconSheetHeader}>
-          <Text style={styles.sheetTitle}>Tarih Seç</Text>
+          <Text style={styles.sheetTitle}>{t('create.selectDate')}</Text>
           <TouchableOpacity
             onPress={onCancel}
             style={styles.iconSheetClose}
@@ -225,7 +223,7 @@ function CalendarSheet({ visible, selectedDate, onConfirm, onCancel }: {
             activeOpacity={0.8}
           >
             <MaterialCommunityIcons name="calendar-today" size={16} color={colors.orangeDark} />
-            <Text style={styles.calendarTodayText}>Bugüne Git</Text>
+            <Text style={styles.calendarTodayText}>{t('create.goToToday')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -244,6 +242,7 @@ function IconPickerSheet({ visible, selectedIcon, onSelect, onCancel }: {
 }) {
   const colors = useAppColors();
   const styles = useThemedStyles();
+  const { t } = useLanguage();
   const [tab, setTab] = useState<'activity' | 'lifestyle'>('activity');
   const list = tab === 'activity' ? ICONS_ACTIVITY : ICONS_LIFESTYLE;
 
@@ -251,7 +250,7 @@ function IconPickerSheet({ visible, selectedIcon, onSelect, onCancel }: {
     <BottomSheet visible={visible} onClose={onCancel} maxHeight={SCREEN_H * 0.65}>
       <View style={{ paddingBottom: 32 }}>
         <View style={styles.iconSheetHeader}>
-          <Text style={styles.sheetTitle}>İkon Seç</Text>
+          <Text style={styles.sheetTitle}>{t('create.selectIcon')}</Text>
           <TouchableOpacity
             onPress={onCancel}
             style={styles.iconSheetClose}
@@ -263,7 +262,7 @@ function IconPickerSheet({ visible, selectedIcon, onSelect, onCancel }: {
 
         <View style={{ paddingHorizontal: 20, marginBottom: 12 }}>
           <PillTabs
-            tabs={[{ key: 'activity', label: 'Aktivite' }, { key: 'lifestyle', label: 'Yaşam' }]}
+            tabs={[{ key: 'activity', label: t('create.activity') }, { key: 'lifestyle', label: t('create.lifestyle') }]}
             activeKey={tab}
             onChange={(k) => setTab(k as 'activity' | 'lifestyle')}
           />
@@ -326,6 +325,7 @@ function SpectrumPicker({ onColorChange, onBack }: {
 }) {
   const colors = useAppColors();
   const styles = useThemedStyles();
+  const { t } = useLanguage();
   const [pickedColor, setPickedColor] = useState('#FF8A1F');
   const [cursorX, setCursorX] = useState(SPECTRUM_SIZE / 2);
   const [cursorY, setCursorY] = useState(SPECTRUM_SIZE / 3);
@@ -356,7 +356,7 @@ function SpectrumPicker({ onColorChange, onBack }: {
         style={styles.spectrumBackBtn}
       >
         <MaterialCommunityIcons name="arrow-left" size={18} color={colors.text} />
-        <Text style={styles.spectrumBackText}>Palette</Text>
+        <Text style={styles.spectrumBackText}>{t('create.palette')}</Text>
       </TouchableOpacity>
 
       <View
@@ -407,6 +407,7 @@ function ColorPickerSheet({ visible, selectedColor, onSelect, onCancel }: {
 }) {
   const colors = useAppColors();
   const styles = useThemedStyles();
+  const { t } = useLanguage();
   const [showSpectrum, setShowSpectrum] = useState(false);
 
   if (!visible) return null;
@@ -421,7 +422,7 @@ function ColorPickerSheet({ visible, selectedColor, onSelect, onCancel }: {
       <View style={{ paddingBottom: 36 }}>
         {!showSpectrum && (
           <View style={styles.iconSheetHeader}>
-            <Text style={styles.sheetTitle}>Renk Seç</Text>
+            <Text style={styles.sheetTitle}>{t('create.selectColor')}</Text>
             <TouchableOpacity onPress={dismiss} style={styles.iconSheetClose} activeOpacity={0.7}>
               <MaterialCommunityIcons name="close" size={18} color={colors.muted} />
             </TouchableOpacity>
@@ -479,20 +480,53 @@ export default function CreateScreen() {
   const colors = useAppColors();
   const styles = useThemedStyles();
   const { showToast } = useToast();
+  const { t } = useLanguage();
+  const MONTH_NAMES = t('dates.months') as unknown as string[];
   const navigation = useNavigation<any>();
-  const [taskName, setTaskName] = useState('');
-  const [selectedIcon, setSelectedIcon] = useState<IconName>('medal');
-  const [selectedColor, setSelectedColor] = useState('#FF8A1F');
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
-  const [noEndDate, setNoEndDate] = useState(false);
+  const route = useRoute<any>();
+
+  const editingHabit: Habit | undefined = route.params?.habit;
+  const isEditing = !!editingHabit;
+
+  const [taskName, setTaskName] = useState(editingHabit?.name ?? '');
+  const [selectedIcon, setSelectedIcon] = useState<IconName>(
+    (editingHabit?.icon as IconName) ?? 'medal'
+  );
+  const [selectedColor, setSelectedColor] = useState(editingHabit?.iconColor ?? '#FF8A1F');
+  const [startDate, setStartDate] = useState(
+    editingHabit ? new Date(editingHabit.startDate) : new Date()
+  );
+  const [endDate, setEndDate] = useState(
+    editingHabit?.endDate ? new Date(editingHabit.endDate) : new Date()
+  );
+  const [noEndDate, setNoEndDate] = useState(editingHabit?.noEndDate ?? false);
+
+  // Reset form when params change (navigating between create/edit)
+  useEffect(() => {
+    if (editingHabit) {
+      setTaskName(editingHabit.name);
+      setSelectedIcon((editingHabit.icon as IconName) ?? 'medal');
+      setSelectedColor(editingHabit.iconColor ?? '#FF8A1F');
+      setStartDate(new Date(editingHabit.startDate));
+      setEndDate(editingHabit.endDate ? new Date(editingHabit.endDate) : new Date());
+      setNoEndDate(editingHabit.noEndDate ?? false);
+    } else {
+      resetForm();
+    }
+  }, [editingHabit?.id]);
 
   const [showStartCal, setShowStartCal] = useState(false);
   const [showEndCal, setShowEndCal] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
 
-  const navigateToHome = () => {
+  const navigateBack = () => {
+    // Clear params so returning to Create tab later starts fresh
+    navigation.setParams({ habit: undefined });
+    if (isEditing) {
+      navigation.navigate('Habit');
+      return;
+    }
     const parentNavigation = navigation.getParent?.();
     if (parentNavigation?.navigate) {
       parentNavigation.navigate('Home');
@@ -514,48 +548,65 @@ export default function CreateScreen() {
     if (!taskName.trim()) {
       showToast({
         type: 'error',
-        title: 'Alışkanlık adı gerekli',
-        message: 'Lütfen bir alışkanlık adı girin.',
+        title: t('create.nameRequired'),
+        message: t('create.nameRequiredMsg'),
       });
       return;
     }
     if (!noEndDate && endDate < startDate) {
       showToast({
         type: 'error',
-        title: 'Geçersiz tarih',
-        message: 'Bitiş tarihi başlangıç tarihinden önce olamaz.',
+        title: t('create.invalidDate'),
+        message: t('create.invalidDateMsg'),
       });
       return;
     }
     const trimmedName = taskName.trim();
-    const habit: Habit = {
-      id: `habit-${Date.now()}`,
-      name: trimmedName,
-      completed: false,
-      bgColor: lightenColor(selectedColor),
-      icon: selectedIcon,
-      iconColor: selectedColor,
-      createdAt: new Date().toISOString(),
-      startDate: startDate.toISOString().slice(0, 10),
-      endDate: noEndDate ? null : endDate.toISOString().slice(0, 10),
-      noEndDate,
-    };
 
     try {
-      await addHabit(habit);
-      resetForm();
-      showToast({
-        type: 'success',
-        title: 'Kaydedildi',
-        message: `"${trimmedName}" alışkanlığı oluşturuldu.`,
-      });
-      navigateToHome();
+      if (isEditing) {
+        await updateHabit(editingHabit.id, {
+          name: trimmedName,
+          bgColor: lightenColor(selectedColor),
+          icon: selectedIcon,
+          iconColor: selectedColor,
+          startDate: startDate.toISOString().slice(0, 10),
+          endDate: noEndDate ? null : endDate.toISOString().slice(0, 10),
+          noEndDate,
+        });
+        showToast({
+          type: 'success',
+          title: t('create.updated'),
+          message: t('create.updatedMsg', { name: trimmedName }),
+        });
+      } else {
+        const habit: Habit = {
+          id: `habit-${Date.now()}`,
+          name: trimmedName,
+          completed: false,
+          bgColor: lightenColor(selectedColor),
+          icon: selectedIcon,
+          iconColor: selectedColor,
+          createdAt: new Date().toISOString(),
+          startDate: startDate.toISOString().slice(0, 10),
+          endDate: noEndDate ? null : endDate.toISOString().slice(0, 10),
+          noEndDate,
+        };
+        await addHabit(habit);
+        resetForm();
+        showToast({
+          type: 'success',
+          title: t('create.saved'),
+          message: t('create.savedMsg', { name: trimmedName }),
+        });
+      }
+      navigateBack();
     } catch (error) {
       console.error('Habit save failed', error);
       showToast({
         type: 'error',
-        title: 'Kaydedilemedi',
-        message: 'Alışkanlık kaydedilirken bir hata oluştu.',
+        title: t('create.saveFailed'),
+        message: t('create.saveFailedMsg'),
       });
     }
   };
@@ -564,7 +615,10 @@ export default function CreateScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
 
       {/* ── Başlık ──────────────────────────────────── */}
-      <ScreenHeader title="Alışkanlık Ekle" subtitle="Yeni bir alışkanlık ekle" />
+      <ScreenHeader
+        title={isEditing ? t('create.editHabit') : t('create.addHabit')}
+        subtitle={isEditing ? t('create.editHabitSubtitle') : t('create.addHabitSubtitle')}
+      />
 
       <ScrollView
         style={styles.scroll}
@@ -574,12 +628,12 @@ export default function CreateScreen() {
       >
 
         {/* ── Önizleme (Preview) ────────────────────── */}
-        <Text style={styles.sectionLabel}>Önizleme</Text>
+        <Text style={styles.sectionLabel}>{t('create.preview')}</Text>
         <View style={{ marginHorizontal: -20, marginBottom: 28 }}>
           <HabitCard
             habit={{
               id: 'preview',
-              name: taskName || 'Alışkanlık adı girin...',
+              name: taskName || t('create.habitNamePlaceholder'),
               completed: false,
               bgColor: lightenColor(selectedColor),
               icon: selectedIcon,
@@ -594,19 +648,19 @@ export default function CreateScreen() {
         </View>
 
         {/* ── Görev Adı ─────────────────────────────── */}
-        <Text style={styles.sectionLabel}>Alışkanlık Adı</Text>
+        <Text style={styles.sectionLabel}>{t('create.habitName')}</Text>
         <View style={styles.card}>
           <TextInput
             value={taskName}
             onChangeText={setTaskName}
-            placeholder="Alışkanlık adı girin..."
+            placeholder={t('create.habitNamePlaceholder')}
             placeholderTextColor={colors.muted}
             style={styles.nameInput}
           />
         </View>
 
         {/* ── Görünüm (İkon & Renk) ─────────────────── */}
-        <Text style={styles.sectionLabel}>Görünüm</Text>
+        <Text style={styles.sectionLabel}>{t('create.appearance')}</Text>
         <View style={styles.appearanceRow}>
           <TouchableOpacity
             style={styles.appearanceCard}
@@ -616,7 +670,7 @@ export default function CreateScreen() {
             <View style={styles.rowIconWrap}>
               <MaterialCommunityIcons name="emoticon-outline" size={18} color={colors.orange} />
             </View>
-            <Text style={styles.appearanceLabel}>İkon</Text>
+            <Text style={styles.appearanceLabel}>{t('create.icon')}</Text>
             <MaterialCommunityIcons name={selectedIcon} size={22} color={colors.text} />
           </TouchableOpacity>
 
@@ -628,16 +682,16 @@ export default function CreateScreen() {
             <View style={styles.rowIconWrap}>
               <MaterialCommunityIcons name="palette-outline" size={18} color={colors.orange} />
             </View>
-            <Text style={styles.appearanceLabel}>Renk</Text>
+            <Text style={styles.appearanceLabel}>{t('create.color')}</Text>
             <View style={[styles.colorDot, { backgroundColor: selectedColor }]} />
           </TouchableOpacity>
         </View>
 
         {/* ── Ne Zaman ──────────────────────────────── */}
         <View style={styles.sectionLabelRow}>
-          <Text style={styles.sectionLabel}>Ne Zaman</Text>
+          <Text style={styles.sectionLabel}>{t('create.when')}</Text>
           <View style={styles.noEndDateInline}>
-            <Text style={[styles.noEndDateText, noEndDate && { color: colors.orange }]}>Süresiz</Text>
+            <Text style={[styles.noEndDateText, noEndDate && { color: colors.orange }]}>{t('create.unlimited')}</Text>
             <Switch
               value={noEndDate}
               onValueChange={setNoEndDate}
@@ -659,10 +713,10 @@ export default function CreateScreen() {
               <View style={styles.rowIconWrap}>
                 <MaterialCommunityIcons name="calendar-start-outline" size={18} color={colors.orange} />
               </View>
-              <Text style={styles.cardRowLabel}>Başlangıç</Text>
+              <Text style={styles.cardRowLabel}>{t('create.start')}</Text>
             </View>
             <View style={styles.cardRowRight}>
-              <Text style={styles.cardRowValue}>{formatDate(startDate)}</Text>
+              <Text style={styles.cardRowValue}>{formatDate(startDate, MONTH_NAMES)}</Text>
               <MaterialCommunityIcons name="chevron-right" size={20} color={colors.muted} />
             </View>
           </TouchableOpacity>
@@ -680,10 +734,10 @@ export default function CreateScreen() {
                   <View style={styles.rowIconWrap}>
                     <MaterialCommunityIcons name="calendar-end-outline" size={18} color={colors.red} />
                   </View>
-                  <Text style={styles.cardRowLabel}>Bitiş</Text>
+                  <Text style={styles.cardRowLabel}>{t('create.end')}</Text>
                 </View>
                 <View style={styles.cardRowRight}>
-                  <Text style={styles.cardRowValue}>{formatDate(endDate)}</Text>
+                  <Text style={styles.cardRowValue}>{formatDate(endDate, MONTH_NAMES)}</Text>
                   <MaterialCommunityIcons name="chevron-right" size={20} color={colors.muted} />
                 </View>
               </TouchableOpacity>
@@ -699,7 +753,7 @@ export default function CreateScreen() {
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
               style={styles.saveBtn}
             >
-              <Text style={styles.saveBtnText}>Kaydet</Text>
+              <Text style={styles.saveBtnText}>{isEditing ? t('common.update') : t('common.save')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>

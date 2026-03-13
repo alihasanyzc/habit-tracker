@@ -1,13 +1,14 @@
 import React, { useRef, useEffect } from 'react';
 import { Animated, Easing } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import i18n from './i18n';
 
 export function getTimeOfDay() {
   const hour = new Date().getHours();
-  if (hour >= 5 && hour < 12) return { greeting: 'Günaydın', icon: 'weather-sunny', bg: '#FF8A1F', type: 'day' };
-  if (hour >= 12 && hour < 17) return { greeting: 'İyi Günler', icon: 'white-balance-sunny', bg: '#F5A623', type: 'day' };
-  if (hour >= 17 && hour < 21) return { greeting: 'İyi Akşamlar', icon: 'weather-sunset', bg: '#E06B00', type: 'night' };
-  return { greeting: 'İyi Geceler', icon: 'weather-night', bg: '#3D5A99', type: 'night' };
+  if (hour >= 5 && hour < 12) return { greeting: i18n.t('time.goodMorning'), icon: 'weather-sunny', bg: '#FF8A1F', type: 'day' };
+  if (hour >= 12 && hour < 17) return { greeting: i18n.t('time.goodAfternoon'), icon: 'white-balance-sunny', bg: '#F5A623', type: 'day' };
+  if (hour >= 17 && hour < 21) return { greeting: i18n.t('time.goodEvening'), icon: 'weather-sunset', bg: '#E06B00', type: 'night' };
+  return { greeting: i18n.t('time.goodNight'), icon: 'weather-night', bg: '#3D5A99', type: 'night' };
 }
 
 export function AnimatedTimeIcon({ icon, type }: { icon: string; type: string }) {

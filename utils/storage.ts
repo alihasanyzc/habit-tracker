@@ -5,6 +5,7 @@ const STORAGE_KEYS = {
   plan: 'user_plan',
   habits: 'local_habit_data',
   themePreference: 'app_theme_preference',
+  languagePreference: 'app_language_preference',
 } as const;
 
 const DEFAULT_PLAN: UserPlan = 'guest';
@@ -156,4 +157,12 @@ export async function saveLocalHabitData(data: LocalHabitData) {
 
 export async function clearLocalHabitData() {
   await removeStoredItem(STORAGE_KEYS.habits);
+}
+
+export async function getLanguagePreference(): Promise<string | null> {
+  return getStoredItem(STORAGE_KEYS.languagePreference);
+}
+
+export async function setLanguagePreference(language: string) {
+  await setStoredItem(STORAGE_KEYS.languagePreference, language);
 }

@@ -10,80 +10,35 @@ import Svg, {
   Stop, G, Text as SvgText, Polygon,
 } from 'react-native-svg';
 import ScreenHeader from '../components/ScreenHeader';
+import PlusAccessGate from '../components/PlusAccessGate';
 import Dropdown from '../components/Dropdown';
 import { ACCENT, useAppColors, useIsDark, type AppColors } from '../constants/colors';
+import type { Habit, HabitEntry, UserPlan } from '../types/habit';
+import { getHabitData } from '../utils/habitRepository';
+import { getPlan } from '../utils/storage';
+import {
+  countCompletedHabitsForDate,
+  getCompletionRateForRange,
+  getDateKeysBetween,
+  getDateKeysInMonth,
+  getHabitStreak,
+  getScheduledHabitsForDate,
+  getTodayKey,
+  getWeekDateKeys,
+  parseDateKey,
+} from '../utils/habitMetrics';
+import { useLanguage } from '../providers/LanguageProvider';
+import i18n from '../utils/i18n';
 
 const W = Dimensions.get('window').width;
 const CARD_W = W - 32;
 const CHART_INNER = CARD_W - 32;
 
-const STAT_CARDS = [
-  { value: '226 gün', label: 'Mevcut seri', accent: ACCENT.orange },
-  { value: '%89', label: 'Tamamlama oranı', accent: ACCENT.green },
-  { value: '3.268', label: 'Tamamlanan alışkanlık', accent: ACCENT.brown },
-  { value: '307', label: 'Mükemmel gün toplamı', accent: ACCENT.pink },
-];
-
+type StatCard = { value: string; label: string; accent: string };
 type BarItem = { label: string; val: number };
 type BarConfig = { items: BarItem[]; yMax: number; yTicks: number[]; defaultIdx: number };
-
-const BAR_DATA: Record<string, BarConfig> = {
-  'Bu Hafta': {
-    items: [
-      { label: '16', val: 6 }, { label: '17', val: 7 }, { label: '18', val: 5 },
-      { label: '19', val: 6 }, { label: '20', val: 5 }, { label: '21', val: 7 },
-      { label: '22', val: 4 },
-    ],
-    yMax: 8, yTicks: [2, 4, 6, 8], defaultIdx: 2,
-  },
-  'Bu Ay': {
-    items: [
-      { label: 'H1', val: 29 }, { label: 'H2', val: 38 },
-      { label: 'H3', val: 23 }, { label: 'H4', val: 33 },
-    ],
-    yMax: 45, yTicks: [10, 20, 30, 40], defaultIdx: 1,
-  },
-  'Bu Yıl': {
-    items: [
-      { label: 'Oca', val: 118 }, { label: 'Şub', val: 96 }, { label: 'Mar', val: 130 },
-      { label: 'Nis', val: 108 }, { label: 'May', val: 142 }, { label: 'Haz', val: 122 },
-      { label: 'Tem', val: 138 }, { label: 'Ağu', val: 115 }, { label: 'Eyl', val: 110 },
-      { label: 'Eki', val: 128 }, { label: 'Kas', val: 105 }, { label: 'Ara', val: 145 },
-    ],
-    yMax: 160, yTicks: [50, 100, 150], defaultIdx: 4,
-  },
-};
-
 type LineItem = { label: string; val: number };
 type LineConfig = { items: LineItem[]; activeIdx: number };
-
-const LINE_DATA: Record<string, LineConfig> = {
-  'Son 6 Ay': {
-    items: [
-      { label: 'Eyl', val: 65 }, { label: 'Eki', val: 58 }, { label: 'Kas', val: 72 },
-      { label: 'Ara', val: 68 }, { label: 'Oca', val: 72 }, { label: 'Şub', val: 75 },
-    ],
-    activeIdx: 4,
-  },
-  'Geçen Yıl': {
-    items: [
-      { label: 'M', val: 55 }, { label: 'N', val: 62 }, { label: 'M', val: 68 },
-      { label: 'H', val: 70 }, { label: 'T', val: 75 }, { label: 'A', val: 68 },
-      { label: 'E', val: 65 }, { label: 'E', val: 58 }, { label: 'K', val: 72 },
-      { label: 'A', val: 68 }, { label: 'O', val: 72 }, { label: 'Ş', val: 75 },
-    ],
-    activeIdx: 10,
-  },
-  'Tüm Zamanlar': {
-    items: [
-      { label: '23Ç1', val: 45 }, { label: '23Ç2', val: 58 }, { label: '23Ç3', val: 62 },
-      { label: '23Ç4', val: 70 }, { label: '24Ç1', val: 68 }, { label: '24Ç2', val: 75 },
-      { label: '24Ç3', val: 72 }, { label: '24Ç4', val: 80 }, { label: '25Ç1', val: 78 },
-      { label: '25Ç2', val: 85 }, { label: '25Ç3', val: 82 }, { label: '25Ç4', val: 89 },
-    ],
-    activeIdx: 9,
-  },
-};
 
 function useThemedStyles() {
   const colors = useAppColors();
@@ -98,7 +53,7 @@ function buildBezierPath(
   if (points.length < 2) return { linePath: '', areaPath: '' };
 
   let line = `M ${points[0].x} ${points[0].y}`;
-  for (let i = 1; i < points.length; i++) {
+  for (let i = 1; i < points.length; i += 1) {
     const prev = points[i - 1];
     const current = points[i];
     const controlPointX = (prev.x + current.x) / 2;
@@ -111,6 +66,182 @@ function buildBezierPath(
   return { linePath: line, areaPath: area };
 }
 
+function buildAxis(values: number[]) {
+  const maxValue = Math.max(0, ...values);
+  const step = Math.max(1, Math.ceil(maxValue / 4));
+  const yMax = Math.max(4, step * 4);
+
+  return {
+    yMax,
+    yTicks: Array.from({ length: 4 }, (_, index) => step * (index + 1)),
+  };
+}
+
+function countCompletedInRange(habits: Habit[], entries: HabitEntry[], startDate: string, endDate: string) {
+  return getDateKeysBetween(startDate, endDate).reduce(
+    (sum, dateKey) => sum + countCompletedHabitsForDate(habits, entries, dateKey),
+    0
+  );
+}
+
+function monthRange(year: number, month: number) {
+  const dates = getDateKeysInMonth(year, month);
+  return {
+    start: dates[0],
+    end: dates[dates.length - 1],
+  };
+}
+
+function getTimelineStart(habits: Habit[], entries: HabitEntry[]) {
+  const candidates = [...habits.map((habit) => habit.startDate), ...entries.map((entry) => entry.date)]
+    .sort((left, right) => left.localeCompare(right));
+
+  return candidates[0] ?? getTodayKey();
+}
+
+function buildStatCards(habits: Habit[], entries: HabitEntry[]): StatCard[] {
+  const timelineStart = getTimelineStart(habits, entries);
+  const today = getTodayKey();
+  const overall = getCompletionRateForRange(habits, entries, timelineStart, today);
+  const bestCurrentStreak = habits.reduce(
+    (best, habit) => Math.max(best, getHabitStreak(habit, entries)),
+    0
+  );
+  const completedTotal = entries.filter((entry) => entry.completed).length;
+  const perfectDays = getDateKeysBetween(timelineStart, today).reduce((count, dateKey) => {
+    const scheduled = getScheduledHabitsForDate(habits, dateKey).length;
+    if (scheduled === 0) {
+      return count;
+    }
+
+    return count + (countCompletedHabitsForDate(habits, entries, dateKey) === scheduled ? 1 : 0);
+  }, 0);
+
+  return [
+    { value: `${bestCurrentStreak} ${i18n.t('common.days')}`, label: i18n.t('report.currentStreak'), accent: ACCENT.orange },
+    { value: `%${overall.rate}`, label: i18n.t('report.completionRate'), accent: ACCENT.green },
+    { value: completedTotal.toLocaleString(), label: i18n.t('report.completedHabits'), accent: ACCENT.brown },
+    { value: perfectDays.toLocaleString(), label: i18n.t('report.perfectDays'), accent: ACCENT.pink },
+  ];
+}
+
+function buildBarConfigs(habits: Habit[], entries: HabitEntry[]): Record<string, BarConfig> {
+  const today = new Date();
+  const todayKey = getTodayKey();
+  const weekDates = getWeekDateKeys(todayKey);
+  const weekItems = weekDates.map((dateKey) => ({
+    label: `${parseDateKey(dateKey).getDate()}`,
+    val: countCompletedHabitsForDate(habits, entries, dateKey),
+  }));
+  const weekAxis = buildAxis(weekItems.map((item) => item.val));
+
+  const monthDates = getDateKeysInMonth(today.getFullYear(), today.getMonth());
+  const monthChunks = Array.from({ length: Math.ceil(monthDates.length / 7) }, (_, index) =>
+    monthDates.slice(index * 7, index * 7 + 7)
+  );
+  const monthItems = monthChunks.map((chunk, index) => ({
+    label: `${i18n.t('report.weekAbbr')}${index + 1}`,
+    val: chunk.reduce((sum, dateKey) => sum + countCompletedHabitsForDate(habits, entries, dateKey), 0),
+  }));
+  const monthAxis = buildAxis(monthItems.map((item) => item.val));
+
+  const monthsChartShort = i18n.t('dates.monthsChartShort') as unknown as string[];
+  const yearItems = Array.from({ length: 12 }, (_, month) => {
+    const range = monthRange(today.getFullYear(), month);
+    return {
+      label: monthsChartShort[month],
+      val: countCompletedInRange(habits, entries, range.start, range.end),
+    };
+  });
+  const yearAxis = buildAxis(yearItems.map((item) => item.val));
+
+  return {
+    [i18n.t('report.thisWeek')]: {
+      items: weekItems,
+      yMax: weekAxis.yMax,
+      yTicks: weekAxis.yTicks,
+      defaultIdx: weekItems.length - 1,
+    },
+    [i18n.t('report.thisMonth')]: {
+      items: monthItems,
+      yMax: monthAxis.yMax,
+      yTicks: monthAxis.yTicks,
+      defaultIdx: monthItems.length - 1,
+    },
+    [i18n.t('report.thisYear')]: {
+      items: yearItems,
+      yMax: yearAxis.yMax,
+      yTicks: yearAxis.yTicks,
+      defaultIdx: new Date().getMonth(),
+    },
+  };
+}
+
+function buildLineConfigs(habits: Habit[], entries: HabitEntry[]): Record<string, LineConfig> {
+  const now = new Date();
+  const monthsChartShort = i18n.t('dates.monthsChartShort') as unknown as string[];
+  const recentSixMonths = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
+    const range = monthRange(date.getFullYear(), date.getMonth());
+    return {
+      label: monthsChartShort[date.getMonth()],
+      val: getCompletionRateForRange(habits, entries, range.start, range.end).rate,
+    };
+  });
+
+  const previousYear = now.getFullYear() - 1;
+  const previousYearItems = Array.from({ length: 12 }, (_, month) => {
+    const range = monthRange(previousYear, month);
+    return {
+      label: monthsChartShort[month],
+      val: getCompletionRateForRange(habits, entries, range.start, range.end).rate,
+    };
+  });
+
+  const timelineStart = parseDateKey(getTimelineStart(habits, entries));
+  const currentQuarter = Math.floor(now.getMonth() / 3);
+  const currentYear = now.getFullYear();
+  const quarterItems: LineItem[] = [];
+  let year = timelineStart.getFullYear();
+  let quarter = Math.floor(timelineStart.getMonth() / 3);
+
+  while (year < currentYear || (year === currentYear && quarter <= currentQuarter)) {
+    const startMonth = quarter * 3;
+    const startDate = new Date(year, startMonth, 1);
+    const endDate = new Date(year, startMonth + 3, 0);
+    quarterItems.push({
+      label: `${String(year).slice(-2)}${i18n.t('report.quarterAbbr')}${quarter + 1}`,
+      val: getCompletionRateForRange(
+        habits,
+        entries,
+        `${startDate.getFullYear()}-${`${startDate.getMonth() + 1}`.padStart(2, '0')}-01`,
+        `${endDate.getFullYear()}-${`${endDate.getMonth() + 1}`.padStart(2, '0')}-${`${endDate.getDate()}`.padStart(2, '0')}`
+      ).rate,
+    });
+
+    quarter += 1;
+    if (quarter > 3) {
+      quarter = 0;
+      year += 1;
+    }
+  }
+
+  return {
+    [i18n.t('report.last6Months')]: {
+      items: recentSixMonths,
+      activeIdx: recentSixMonths.length - 1,
+    },
+    [i18n.t('report.lastYear')]: {
+      items: previousYearItems,
+      activeIdx: previousYearItems.length - 1,
+    },
+    [i18n.t('report.allTime')]: {
+      items: quarterItems,
+      activeIdx: quarterItems.length - 1,
+    },
+  };
+}
+
 const BAR_H = 200;
 const Y_AXIS_W = 28;
 const X_AXIS_H = 20;
@@ -121,23 +252,23 @@ const PLOT_H = BAR_H - TOP_PAD - X_AXIS_H;
 function BarChartSvg({ config, activeIdx, onBarPress, progress = 1 }: {
   config: BarConfig;
   activeIdx: number;
-  onBarPress: (i: number) => void;
+  onBarPress: (index: number) => void;
   progress?: number;
 }) {
   const colors = useAppColors();
   const itemCount = config.items.length;
   const svgWidth = Math.max(CHART_INNER, Y_AXIS_W + itemCount * 45 + 16);
   const plotWidth = svgWidth - Y_AXIS_W - 16;
-  const gap = plotWidth / (itemCount * 1.6);
-  const barWidth = (plotWidth - gap * (itemCount - 1)) / itemCount;
+  const gap = plotWidth / Math.max(itemCount * 1.6, 1);
+  const barWidth = itemCount > 0 ? (plotWidth - gap * (itemCount - 1)) / itemCount : plotWidth;
 
   const barX = (index: number) => Y_AXIS_W + index * (barWidth + gap);
-  const barHeight = (value: number) => (value / config.yMax) * PLOT_H * progress;
+  const barHeight = (value: number) => config.yMax > 0 ? (value / config.yMax) * PLOT_H * progress : 0;
   const barY = (value: number) => TOP_PAD + (PLOT_H - barHeight(value));
 
   return (
     <Svg width={svgWidth} height={BAR_H}>
-      {config.yTicks.map(tick => {
+      {config.yTicks.map((tick) => {
         const tickY = TOP_PAD + PLOT_H - (tick / config.yMax) * PLOT_H;
         return (
           <G key={tick}>
@@ -162,7 +293,7 @@ function BarChartSvg({ config, activeIdx, onBarPress, progress = 1 }: {
         const centerX = x + barWidth / 2;
 
         return (
-          <G key={index}>
+          <G key={item.label}>
             <Rect
               x={x}
               y={y}
@@ -210,7 +341,7 @@ function BarChartSvg({ config, activeIdx, onBarPress, progress = 1 }: {
                   fontSize={9}
                   fill={colors.axisTick}
                 >
-                  alışkanlık
+                  {i18n.t('report.habitLabel')}
                 </SvgText>
                 <Polygon
                   points={`${centerX - 5},${y - 6} ${centerX + 5},${y - 6} ${centerX},${y - 1}`}
@@ -234,11 +365,11 @@ const LPLOT_H = LINE_H - LTOP_PAD - LX_AXIS_H;
 function AreaChartSvg({ config, activeIdx, onDotPress }: {
   config: LineConfig;
   activeIdx: number;
-  onDotPress: (i: number) => void;
+  onDotPress: (index: number) => void;
 }) {
   const colors = useAppColors();
   const itemCount = config.items.length;
-  const svgWidth = Math.max(CHART_INNER, LY_AXIS_W + (itemCount - 1) * 55 + 32);
+  const svgWidth = Math.max(CHART_INNER, LY_AXIS_W + Math.max(itemCount - 1, 1) * 55 + 32);
   const plotWidth = svgWidth - LY_AXIS_W - 32;
   const step = plotWidth / Math.max(itemCount - 1, 1);
   const toY = (value: number) => LTOP_PAD + LPLOT_H - (value / 100) * LPLOT_H;
@@ -274,7 +405,7 @@ function AreaChartSvg({ config, activeIdx, onDotPress }: {
         const isActive = index === activeIdx;
         const item = config.items[index];
         return (
-          <G key={index}>
+          <G key={item.label}>
             {isActive ? (
               <>
                 <Circle cx={point.x} cy={point.y} r={20} fill={colors.orange} opacity={0.12} />
@@ -331,10 +462,17 @@ function AreaChartSvg({ config, activeIdx, onDotPress }: {
 
 export default function ReportScreen() {
   const styles = useThemedStyles();
-  const [barPeriod, setBarPeriod] = useState('Bu Hafta');
-  const [linePeriod, setLinePeriod] = useState('Son 6 Ay');
-  const [activeBarIdx, setActiveBarIdx] = useState(BAR_DATA['Bu Hafta'].defaultIdx);
-  const [activeLineIdx, setActiveLineIdx] = useState(LINE_DATA['Son 6 Ay'].activeIdx);
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [entries, setEntries] = useState<HabitEntry[]>([]);
+  const [plan, setPlan] = useState<UserPlan | null>(null);
+  const statCards = useMemo(() => buildStatCards(habits, entries), [habits, entries]);
+  const barConfigs = useMemo(() => buildBarConfigs(habits, entries), [habits, entries]);
+  const lineConfigs = useMemo(() => buildLineConfigs(habits, entries), [habits, entries]);
+  const { t } = useLanguage();
+  const [barPeriod, setBarPeriod] = useState(i18n.t('report.thisWeek'));
+  const [linePeriod, setLinePeriod] = useState(i18n.t('report.last6Months'));
+  const [activeBarIdx, setActiveBarIdx] = useState(0);
+  const [activeLineIdx, setActiveLineIdx] = useState(0);
 
   const chartAnim = useRef(new Animated.Value(0)).current;
   const barScaleAnim = useRef(new Animated.Value(1)).current;
@@ -346,14 +484,51 @@ export default function ReportScreen() {
     return () => chartAnim.removeListener(id);
   }, [chartAnim]);
 
+  useEffect(() => {
+    setActiveBarIdx(barConfigs[barPeriod]?.defaultIdx ?? 0);
+  }, [barConfigs, barPeriod]);
+
+  useEffect(() => {
+    setActiveLineIdx(lineConfigs[linePeriod]?.activeIdx ?? 0);
+  }, [lineConfigs, linePeriod]);
+
   useFocusEffect(
     useCallback(() => {
+      let isActive = true;
+
+      const loadScreen = async () => {
+        const currentPlan = await getPlan();
+        if (!isActive) {
+          return;
+        }
+
+        setPlan(currentPlan);
+
+        if (currentPlan !== 'plus') {
+          return;
+        }
+
+        const data = await getHabitData();
+        if (!isActive) {
+          return;
+        }
+
+        setHabits(data.habits);
+        setEntries(data.entries);
+      };
+
+      void loadScreen();
+
       chartAnim.setValue(0);
       Animated.timing(chartAnim, {
         toValue: 1,
         duration: 600,
         useNativeDriver: false,
       }).start();
+
+      return () => {
+        isActive = false;
+      };
     }, [chartAnim])
   );
 
@@ -363,7 +538,6 @@ export default function ReportScreen() {
       Animated.timing(barScaleAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
     ]).start();
     setBarPeriod(value);
-    setActiveBarIdx(BAR_DATA[value].defaultIdx);
   };
 
   const handleLinePeriod = (value: string) => {
@@ -372,24 +546,57 @@ export default function ReportScreen() {
       Animated.timing(lineScaleAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
     ]).start();
     setLinePeriod(value);
-    setActiveLineIdx(LINE_DATA[value].activeIdx);
   };
 
-  const barConfig = BAR_DATA[barPeriod];
-  const lineConfig = LINE_DATA[linePeriod];
+  const barConfig = barConfigs[barPeriod] ?? { items: [], yMax: 4, yTicks: [1, 2, 3, 4], defaultIdx: 0 };
+  const lineConfig = lineConfigs[linePeriod] ?? { items: [], activeIdx: 0 };
+
+  if (plan !== null && plan !== 'plus') {
+    return (
+      <PlusAccessGate
+        title={t('report.reports')}
+        subtitle={t('report.subtitle')}
+        lockedTitle={t('gate.reportsLockedTitle')}
+        lockedDescription={t('gate.reportsLockedDesc')}
+        benefits={[
+          t('gate.reportsBenefit1'),
+          t('gate.reportsBenefit2'),
+          t('gate.reportsBenefit3'),
+        ]}
+      />
+    );
+  }
+
+  if (plan === null) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <ScreenHeader title={t('report.reports')} subtitle={t('report.subtitle')} />
+        <View style={styles.loadingState}>
+          <Text style={styles.loadingText}>{t('report.loading')}</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScreenHeader title="Raporlar" subtitle="Haftalık ve aylık özet" />
+      <ScreenHeader title={t('report.reports')} subtitle={t('report.subtitle')} />
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {habits.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>{t('report.noData')}</Text>
+            <Text style={styles.emptyText}>{t('report.noDataDesc')}</Text>
+          </View>
+        )}
+
         <View style={styles.statGrid}>
-          {STAT_CARDS.map((card, index) => (
-            <View key={index} style={styles.statCard}>
+          {statCards.map((card) => (
+            <View key={card.label} style={styles.statCard}>
               <Text style={[styles.statValue, { color: card.accent }]}>{card.value}</Text>
               <Text style={styles.statLabel}>{card.label}</Text>
             </View>
@@ -398,8 +605,8 @@ export default function ReportScreen() {
 
         <View style={styles.chartCard}>
           <View style={styles.chartHeader}>
-            <Text style={styles.chartTitle}>Tamamlanan Alışkanlıklar</Text>
-            <Dropdown options={['Bu Hafta', 'Bu Ay', 'Bu Yıl']} value={barPeriod} onChange={handleBarPeriod} />
+            <Text style={styles.chartTitle}>{t('report.completedHabitsChart')}</Text>
+            <Dropdown options={[t('report.thisWeek'), t('report.thisMonth'), t('report.thisYear')]} value={barPeriod} onChange={handleBarPeriod} />
           </View>
           <Animated.ScrollView
             horizontal
@@ -428,9 +635,9 @@ export default function ReportScreen() {
           ]}
         >
           <View style={styles.chartHeader}>
-            <Text style={styles.chartTitle}>Alışkanlık Tamamlama Oranı</Text>
+            <Text style={styles.chartTitle}>{t('report.completionRateChart')}</Text>
             <Dropdown
-              options={['Son 6 Ay', 'Geçen Yıl', 'Tüm Zamanlar']}
+              options={[t('report.last6Months'), t('report.lastYear'), t('report.allTime')]}
               value={linePeriod}
               onChange={handleLinePeriod}
             />
@@ -453,6 +660,27 @@ function createStyles(colors: AppColors, isDark: boolean) {
     safe: { flex: 1, backgroundColor: colors.bg },
     scroll: { flex: 1 },
     scrollContent: { paddingHorizontal: 16, paddingTop: 4 },
+    loadingState: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 24,
+    },
+    loadingText: {
+      fontSize: 14,
+      color: colors.muted,
+    },
+    emptyState: {
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      padding: 18,
+      marginBottom: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      gap: 4,
+    },
+    emptyTitle: { fontSize: 15, fontWeight: '700', color: colors.text },
+    emptyText: { fontSize: 13, color: colors.muted, lineHeight: 18 },
     statGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',

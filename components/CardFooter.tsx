@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { getThemedAccentSurface, useAppColors, useIsDark, type AppColors } from '../constants/colors';
+import { useLanguage } from '../providers/LanguageProvider';
 
 interface CardFooterProps {
   done: number;
@@ -10,8 +11,10 @@ interface CardFooterProps {
   bgColor: string;
 }
 
-export default function CardFooter({ done, total, unit = 'gün', color, bgColor }: CardFooterProps) {
+export default function CardFooter({ done, total, unit, color, bgColor }: CardFooterProps) {
   const colors = useAppColors();
+  const { t } = useLanguage();
+  const resolvedUnit = unit ?? t('common.days');
   const isDark = useIsDark();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const pct = Math.round((done / total) * 100);
@@ -21,7 +24,7 @@ export default function CardFooter({ done, total, unit = 'gün', color, bgColor 
   );
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>{done}/{total} {unit}</Text>
+      <Text style={styles.text}>{done}/{total} {resolvedUnit}</Text>
       <View style={[styles.badge, { backgroundColor: badgeBgColor }]}>
         <Text style={[styles.badgeText, { color }]}>{pct}%</Text>
       </View>

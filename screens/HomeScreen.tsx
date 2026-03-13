@@ -20,18 +20,28 @@ import {
 } from '../constants/colors';
 import { getTimeOfDay, AnimatedTimeIcon } from '../utils/timeOfDay';
 import { useFocusEffect } from '@react-navigation/native';
-import type { Habit } from '../types/habit';
-import { getHabits, toggleHabitCompletion } from '../utils/habitRepository';
+import type { Habit, HabitEntry } from '../types/habit';
+import { getHabitData, toggleHabitCompletion } from '../utils/habitRepository';
+import {
+  applyCompletionForDate,
+  countCompletedHabitsForDate,
+  createEntryLookup,
+  getScheduledHabitsForDate,
+  isHabitScheduledOnDate,
+  getTodayKey,
+  getWeekDateKeys,
+  parseDateKey,
+} from '../utils/habitMetrics';
+import { useLanguage } from '../providers/LanguageProvider';
 
-const WEEK_DAYS = [
-  { day: 'Pzt', date: 7, pct: 75 },
-  { day: 'Sal', date: 8, pct: 100 },
-  { day: 'Çar', date: 9, pct: 50 },
-  { day: 'Per', date: 10, isToday: true },
-  { day: 'Cum', date: 11, pct: 25 },
-  { day: 'Cmt', date: 12, pct: 0 },
-  { day: 'Paz', date: 13, pct: 60 },
-];
+function formatHeaderDate(dateKey: string, t: (scope: string) => string) {
+  const date = parseDateKey(dateKey);
+  const dayIndex = date.getDay() === 0 ? 6 : date.getDay() - 1;
+  const weekdaysLong = t('dates.weekdaysLong') as unknown as string[];
+  const months = t('dates.months') as unknown as string[];
+
+  return `${weekdaysLong[dayIndex]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+}
 
 function CircleDay({
   day, date, pct, isSelected, isToday, onPress,
@@ -180,19 +190,29 @@ export function HabitCard({
 export default function HomeScreen() {
   const colors = useAppColors();
   const isDark = useIsDark();
+  const { t } = useLanguage();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
-  const [habits, setHabits] = useState<Habit[]>([]);
-  const [selectedDate, setSelectedDate] = useState(10);
+  const [allHabits, setAllHabits] = useState<Habit[]>([]);
+  const [entries, setEntries] = useState<HabitEntry[]>([]);
+  const [selectedDate, setSelectedDate] = useState(getTodayKey());
   const insets = useSafeAreaInsets();
+  const todayKey = getTodayKey();
+
+  const loadHabitData = useCallback(async () => {
+    const data = await getHabitData(selectedDate);
+    setAllHabits(data.habits);
+    setEntries(data.entries);
+  }, [selectedDate]);
 
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
 
       const loadHabits = async () => {
-        const storedHabits = await getHabits();
+        const storedHabits = await getHabitData(selectedDate);
         if (isActive) {
-          setHabits(storedHabits);
+          setAllHabits(storedHabits.habits);
+          setEntries(storedHabits.entries);
         }
       };
 
@@ -201,25 +221,54 @@ export default function HomeScreen() {
       return () => {
         isActive = false;
       };
-    }, [])
+    }, [selectedDate])
   );
 
+  const habits = useMemo(
+    () => applyCompletionForDate(allHabits, entries, selectedDate)
+      .filter((habit) => isHabitScheduledOnDate(habit, selectedDate)),
+    [allHabits, entries, selectedDate]
+  );
+  const weekDates = useMemo(() => getWeekDateKeys(todayKey), [todayKey]);
   const toggleHabit = useCallback((id: string) => {
-    setHabits(prev => prev.map(h => h.id === id ? { ...h, completed: !h.completed } : h));
-    void toggleHabitCompletion(id).then((nextHabits) => {
-      if (nextHabits) {
-        setHabits(nextHabits);
-      }
+    setEntries((prev) => {
+      const lookup = createEntryLookup(prev);
+      const currentCompleted = lookup.get(`${id}:${selectedDate}`)?.completed === true;
+      const nextEntries = prev.filter(
+        (entry) => !(entry.habitId === id && entry.date === selectedDate)
+      );
+
+      nextEntries.push({
+        habitId: id,
+        date: selectedDate,
+        completed: !currentCompleted,
+        updatedAt: new Date().toISOString(),
+      });
+
+      return nextEntries;
     });
-  }, []);
+
+    void toggleHabitCompletion(id, selectedDate).catch(() => {
+      void loadHabitData();
+    });
+  }, [loadHabitData, selectedDate]);
 
   const completed = habits.filter(h => h.completed);
   const active = habits.filter(h => !h.completed);
-  const todayPct = Math.round((completed.length / habits.length) * 100);
-  const weekDays = WEEK_DAYS.map(d => ({
-    ...d,
-    pct: d.isToday ? todayPct : (d.pct ?? 0),
-  }));
+  const weekdaysShort = t('dates.weekdaysShort') as unknown as string[];
+  const weekDays = weekDates.map((dateKey, index) => {
+    const scheduledCount = getScheduledHabitsForDate(allHabits, dateKey).length;
+    const completedCount = countCompletedHabitsForDate(allHabits, entries, dateKey);
+    const current = parseDateKey(dateKey);
+
+    return {
+      day: weekdaysShort[index],
+      date: current.getDate(),
+      pct: scheduledCount > 0 ? Math.round((completedCount / scheduledCount) * 100) : 0,
+      isToday: dateKey === todayKey,
+      dateKey,
+    };
+  });
   const timeOfDay = getTimeOfDay();
 
   return (
@@ -230,7 +279,7 @@ export default function HomeScreen() {
         <View style={styles.headerTop}>
           <View>
             <Text style={styles.greeting}>{timeOfDay.greeting}</Text>
-            <Text style={styles.dateText}>Salı, 10 Mart 2025</Text>
+            <Text style={styles.dateText}>{formatHeaderDate(selectedDate, t)}</Text>
           </View>
           <View style={styles.headerRight}>
             <View style={[styles.avatar, { backgroundColor: timeOfDay.bg }]}>
@@ -242,13 +291,13 @@ export default function HomeScreen() {
         <View style={styles.weekRow}>
           {weekDays.map(d => (
             <CircleDay
-              key={d.date}
+              key={d.dateKey}
               day={d.day}
               date={d.date}
               pct={d.pct}
-              isSelected={d.date === selectedDate}
+              isSelected={d.dateKey === selectedDate}
               isToday={d.isToday}
-              onPress={() => setSelectedDate(d.date)}
+              onPress={() => setSelectedDate(d.dateKey)}
             />
           ))}
         </View>
@@ -260,8 +309,17 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Alışkanlıklarım</Text>
+          <Text style={styles.sectionTitle}>{t('home.myHabits')}</Text>
         </View>
+
+        {habits.length === 0 && (
+          <View style={styles.emptyWrap}>
+            <Text style={styles.emptyTitle}>{t('home.noHabitsYet')}</Text>
+            <Text style={styles.emptyText}>
+              {t('home.noHabitsDesc')}
+            </Text>
+          </View>
+        )}
 
         {active.map(h => (
           <HabitCard key={h.id} habit={h} onToggle={toggleHabit} />
@@ -269,7 +327,7 @@ export default function HomeScreen() {
 
         {completed.length > 0 && (
           <>
-            <Text style={styles.completedLabel}>Tamamlananlar</Text>
+            <Text style={styles.completedLabel}>{t('home.completed')}</Text>
             {completed.map(h => (
               <HabitCard key={h.id} habit={h} onToggle={toggleHabit} />
             ))}
@@ -351,6 +409,27 @@ function createStyles(colors: AppColors, isDark: boolean) {
       backgroundColor: colors.bg,
     },
     sectionTitle: { fontSize: 13, fontWeight: '500', color: colors.muted },
+    emptyWrap: {
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 16,
+      padding: 20,
+      borderRadius: 18,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      gap: 4,
+    },
+    emptyTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    emptyText: {
+      fontSize: 13,
+      color: colors.muted,
+      lineHeight: 18,
+    },
 
     cardWrap: { paddingHorizontal: 16, marginBottom: 7, position: 'relative' },
     cardReveal: {
