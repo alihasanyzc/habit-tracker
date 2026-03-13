@@ -5,15 +5,13 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Modal,
   PanResponder,
   Animated,
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   getThemedAccentSurface,
   useAppColors,
@@ -23,7 +21,6 @@ import {
 import { getTimeOfDay, AnimatedTimeIcon } from '../utils/timeOfDay';
 import { useFocusEffect } from '@react-navigation/native';
 import type { Habit, HabitEntry } from '../types/habit';
-import PomodoroScreen from './PomodoroScreen';
 import { getHabitData, toggleHabitCompletion } from '../utils/habitRepository';
 import {
   applyCompletionForDate,
@@ -198,7 +195,6 @@ export default function HomeScreen() {
   const [allHabits, setAllHabits] = useState<Habit[]>([]);
   const [entries, setEntries] = useState<HabitEntry[]>([]);
   const [selectedDate, setSelectedDate] = useState(getTodayKey());
-  const [pomodoroVisible, setPomodoroVisible] = useState(false);
   const insets = useSafeAreaInsets();
   const todayKey = getTodayKey();
 
@@ -312,45 +308,6 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <TouchableOpacity
-          style={styles.focusCardWrap}
-          activeOpacity={0.9}
-          onPress={() => setPomodoroVisible(true)}
-        >
-          <LinearGradient
-            colors={isDark ? ['#3A2200', '#241811'] : ['#FFF4EA', '#FFE8D0']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.focusCard}
-          >
-            <View style={styles.focusBadge}>
-              <MaterialCommunityIcons name="timer-outline" size={18} color={colors.orange} />
-              <Text style={styles.focusBadgeText}>{t('pomodoro.methodLabel')}</Text>
-            </View>
-
-            <Text style={styles.focusTitle}>{t('pomodoro.title')}</Text>
-            <Text style={styles.focusDescription}>{t('pomodoro.homeCardDesc')}</Text>
-
-            <View style={styles.focusFooter}>
-              <View style={styles.focusMetricGroup}>
-                <View style={styles.focusMetric}>
-                  <Text style={styles.focusMetricValue}>25</Text>
-                  <Text style={styles.focusMetricLabel}>{t('pomodoro.workflowFocus')}</Text>
-                </View>
-                <View style={styles.focusMetric}>
-                  <Text style={styles.focusMetricValue}>5</Text>
-                  <Text style={styles.focusMetricLabel}>{t('pomodoro.workflowShort')}</Text>
-                </View>
-              </View>
-
-              <View style={styles.focusAction}>
-                <Text style={styles.focusActionText}>{t('pomodoro.openTimer')}</Text>
-                <Ionicons name="arrow-forward" size={16} color={colors.white} />
-              </View>
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
-
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{t('home.myHabits')}</Text>
         </View>
@@ -379,15 +336,6 @@ export default function HomeScreen() {
 
         <View style={{ height: 20 }} />
       </ScrollView>
-
-      <Modal
-        visible={pomodoroVisible}
-        animationType="slide"
-        presentationStyle="fullScreen"
-        onRequestClose={() => setPomodoroVisible(false)}
-      >
-        <PomodoroScreen onClose={() => setPomodoroVisible(false)} />
-      </Modal>
     </View>
   );
 }
@@ -459,86 +407,6 @@ function createStyles(colors: AppColors, isDark: boolean) {
       paddingTop: 6,
       paddingBottom: 8,
       backgroundColor: colors.bg,
-    },
-    focusCardWrap: {
-      paddingHorizontal: 16,
-      marginBottom: 4,
-    },
-    focusCard: {
-      borderRadius: 22,
-      padding: 18,
-      borderWidth: isDark ? 1 : 0,
-      borderColor: colors.border,
-    },
-    focusBadge: {
-      alignSelf: 'flex-start',
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 999,
-      backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.65)',
-    },
-    focusBadgeText: {
-      color: colors.text,
-      fontSize: 12,
-      fontWeight: '700',
-    },
-    focusTitle: {
-      marginTop: 14,
-      fontSize: 24,
-      fontWeight: '800',
-      color: colors.text,
-    },
-    focusDescription: {
-      marginTop: 6,
-      fontSize: 14,
-      lineHeight: 20,
-      color: colors.muted,
-    },
-    focusFooter: {
-      flexDirection: 'row',
-      alignItems: 'flex-end',
-      justifyContent: 'space-between',
-      gap: 12,
-      marginTop: 18,
-    },
-    focusMetricGroup: {
-      flexDirection: 'row',
-      gap: 10,
-    },
-    focusMetric: {
-      minWidth: 72,
-      backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.78)',
-      borderRadius: 16,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-    },
-    focusMetricValue: {
-      color: colors.orange,
-      fontSize: 20,
-      fontWeight: '800',
-    },
-    focusMetricLabel: {
-      marginTop: 4,
-      color: colors.muted,
-      fontSize: 11,
-      fontWeight: '600',
-    },
-    focusAction: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      backgroundColor: colors.orange,
-      borderRadius: 999,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-    },
-    focusActionText: {
-      color: colors.white,
-      fontSize: 13,
-      fontWeight: '800',
     },
     sectionTitle: { fontSize: 13, fontWeight: '500', color: colors.muted },
     emptyWrap: {
