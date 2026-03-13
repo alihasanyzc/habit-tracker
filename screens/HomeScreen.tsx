@@ -1,13 +1,17 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  PanResponder,
   Animated,
+  FlatList,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+  PanResponder,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
@@ -23,6 +27,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { Habit, HabitEntry } from '../types/habit';
 import { getHabitData, toggleHabitCompletion } from '../utils/habitRepository';
 import {
+  addDaysToKey,
   applyCompletionForDate,
   countCompletedHabitsForDate,
   createEntryLookup,
@@ -33,6 +38,10 @@ import {
   parseDateKey,
 } from '../utils/habitMetrics';
 import { useLanguage } from '../providers/LanguageProvider';
+
+const PAST_WEEKS_COUNT = 104;
+const WEEK_PAGE_CHANGE_THRESHOLD = 0.28;
+const WEEK_PAGE_VELOCITY_THRESHOLD = 0.35;
 
 function formatHeaderDate(dateKey: string, t: (scope: string) => string) {
   const date = parseDateKey(dateKey);
@@ -195,8 +204,12 @@ export default function HomeScreen() {
   const [allHabits, setAllHabits] = useState<Habit[]>([]);
   const [entries, setEntries] = useState<HabitEntry[]>([]);
   const [selectedDate, setSelectedDate] = useState(getTodayKey());
+  const [currentWeekIndex, setCurrentWeekIndex] = useState(PAST_WEEKS_COUNT);
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const todayKey = getTodayKey();
+  const weekListRef = useRef<FlatList<string[]> | null>(null);
+  const weekDragStartXRef = useRef(0);
 
   const loadHabitData = useCallback(async () => {
     const data = await getHabitData(selectedDate);
@@ -229,7 +242,53 @@ export default function HomeScreen() {
       .filter((habit) => isHabitScheduledOnDate(habit, selectedDate)),
     [allHabits, entries, selectedDate]
   );
-  const weekDates = useMemo(() => getWeekDateKeys(todayKey), [todayKey]);
+  const todayWeekDates = useMemo(() => getWeekDateKeys(todayKey), [todayKey]);
+  const [selectedWeekdayIndex, setSelectedWeekdayIndex] = useState(
+    Math.max(todayWeekDates.indexOf(todayKey), 0)
+  );
+  const weekPages = useMemo(
+    () => Array.from({ length: PAST_WEEKS_COUNT + 1 }, (_, index) =>
+      getWeekDateKeys(addDaysToKey(todayKey, (index - PAST_WEEKS_COUNT) * 7))
+    ),
+    [todayKey]
+  );
+
+  useEffect(() => {
+    weekListRef.current?.scrollToIndex({ index: currentWeekIndex, animated: false });
+  }, [currentWeekIndex, width]);
+
+  const snapToWeekIndex = useCallback((index: number) => {
+    const boundedIndex = Math.max(0, Math.min(index, weekPages.length - 1));
+    weekListRef.current?.scrollToIndex({ index: boundedIndex, animated: true });
+  }, [weekPages.length]);
+
+  const handleWeekScrollBegin = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    weekDragStartXRef.current = event.nativeEvent.contentOffset.x;
+  }, []);
+
+  const handleWeekScrollEndDrag = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const dragDistance = event.nativeEvent.contentOffset.x - weekDragStartXRef.current;
+    const velocityX = event.nativeEvent.velocity?.x ?? 0;
+    const passedDistanceThreshold = Math.abs(dragDistance) > width * WEEK_PAGE_CHANGE_THRESHOLD;
+    const passedVelocityThreshold = Math.abs(velocityX) > WEEK_PAGE_VELOCITY_THRESHOLD;
+
+    if (!passedDistanceThreshold && !passedVelocityThreshold) {
+      snapToWeekIndex(currentWeekIndex);
+      return;
+    }
+
+    const direction = dragDistance > 0 || velocityX > 0 ? 1 : -1;
+    snapToWeekIndex(currentWeekIndex + direction);
+  }, [currentWeekIndex, snapToWeekIndex, width]);
+
+  const handleWeekScrollEnd = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const nextIndex = Math.round(event.nativeEvent.contentOffset.x / width);
+    const boundedIndex = Math.max(0, Math.min(nextIndex, weekPages.length - 1));
+    const nextWeek = weekPages[boundedIndex];
+
+    setCurrentWeekIndex(boundedIndex);
+    setSelectedDate(nextWeek[selectedWeekdayIndex] ?? nextWeek[0]);
+  }, [selectedWeekdayIndex, weekPages, width]);
   const toggleHabit = useCallback((id: string) => {
     setEntries((prev) => {
       const lookup = createEntryLookup(prev);
@@ -256,7 +315,7 @@ export default function HomeScreen() {
   const completed = habits.filter(h => h.completed);
   const active = habits.filter(h => !h.completed);
   const weekdaysShort = t('dates.weekdaysShort') as unknown as string[];
-  const weekDays = weekDates.map((dateKey, index) => {
+  const buildWeekDays = useCallback((dates: string[]) => dates.map((dateKey, index) => {
     const scheduledCount = getScheduledHabitsForDate(allHabits, dateKey).length;
     const completedCount = countCompletedHabitsForDate(allHabits, entries, dateKey);
     const current = parseDateKey(dateKey);
@@ -268,7 +327,7 @@ export default function HomeScreen() {
       isToday: dateKey === todayKey,
       dateKey,
     };
-  });
+  }), [allHabits, entries, todayKey, weekdaysShort]);
   const timeOfDay = getTimeOfDay();
 
   return (
@@ -288,19 +347,49 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <View style={styles.weekRow}>
-          {weekDays.map(d => (
-            <CircleDay
-              key={d.dateKey}
-              day={d.day}
-              date={d.date}
-              pct={d.pct}
-              isSelected={d.dateKey === selectedDate}
-              isToday={d.isToday}
-              onPress={() => setSelectedDate(d.dateKey)}
-            />
-          ))}
-        </View>
+        <FlatList
+          ref={weekListRef}
+          data={weekPages}
+          horizontal
+          pagingEnabled
+          directionalLockEnabled
+          disableIntervalMomentum
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(item) => item[0]}
+          initialScrollIndex={PAST_WEEKS_COUNT}
+          getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
+          onScrollBeginDrag={handleWeekScrollBegin}
+          onScrollEndDrag={handleWeekScrollEndDrag}
+          onMomentumScrollEnd={handleWeekScrollEnd}
+          renderItem={({ item }) => {
+            const days = buildWeekDays(item);
+
+            return (
+              <View style={[styles.weekPage, { width }]}>
+                <View style={styles.weekRow}>
+                  {days.map((day, index) => {
+                    const dateKey = day.dateKey;
+
+                    return (
+                      <CircleDay
+                        key={dateKey}
+                        day={day.day}
+                        date={day.date}
+                        pct={day.pct}
+                        isSelected={dateKey === selectedDate}
+                        isToday={day.isToday}
+                        onPress={() => {
+                          setSelectedWeekdayIndex(index);
+                          setSelectedDate(dateKey);
+                        }}
+                      />
+                    );
+                  })}
+                </View>
+              </View>
+            );
+          }}
+        />
       </View>
 
       <ScrollView
@@ -383,6 +472,9 @@ function createStyles(colors: AppColors, isDark: boolean) {
       justifyContent: 'space-between',
       paddingHorizontal: 16,
       paddingVertical: 18,
+    },
+    weekPage: {
+      alignItems: 'stretch',
     },
     dayBtn: { alignItems: 'center', gap: 5 },
     dayLabel: { fontSize: 11, color: colors.muted, fontWeight: '400' },
