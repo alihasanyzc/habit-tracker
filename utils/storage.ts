@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
   habits: 'local_habit_data',
   themePreference: 'app_theme_preference',
   languagePreference: 'app_language_preference',
+  onboardingDone: 'onboarding_done',
 } as const;
 
 const DEFAULT_PLAN: UserPlan = 'guest';
@@ -165,4 +166,13 @@ export async function getLanguagePreference(): Promise<string | null> {
 
 export async function setLanguagePreference(language: string) {
   await setStoredItem(STORAGE_KEYS.languagePreference, language);
+}
+
+export async function getOnboardingDone(): Promise<boolean> {
+  const value = await getStoredItem(STORAGE_KEYS.onboardingDone);
+  return value === 'true';
+}
+
+export async function setOnboardingDone() {
+  await setStoredItem(STORAGE_KEYS.onboardingDone, 'true');
 }

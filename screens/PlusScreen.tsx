@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,14 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  Animated,
+  Easing,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import ConfettiCannon from 'react-native-confetti-cannon';
 import {
   useAppColors,
   useIsDark,
@@ -27,6 +31,8 @@ export default function PlusScreen({ onClose }: PlusScreenProps) {
   const { t } = useLanguage();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
+  const [showCloseButton, setShowCloseButton] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const FEATURES = useMemo(() => [
     { icon: 'infinity' as const, title: t('plus.unlimitedHabits'), desc: t('plus.unlimitedHabitsDesc') },
@@ -35,12 +41,96 @@ export default function PlusScreen({ onClose }: PlusScreenProps) {
     { icon: 'cloud-sync-outline' as const, title: t('plus.cloudBackup'), desc: t('plus.cloudBackupDesc') },
   ], [t]);
 
+  // ── Animations ──
+
+  // Close button delay
+  const closeOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowCloseButton(true);
+      Animated.timing(closeOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [closeOpacity]);
+
+  // Feature staggered animation
+  const featureAnims = useRef(FEATURES.map(() => new Animated.Value(0))).current;
+
+  useEffect(() => {
+    const animations = featureAnims.map((anim, index) =>
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: 400,
+        delay: index * 120,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      })
+    );
+    Animated.stagger(120, animations).start();
+  }, [featureAnims]);
+
+  // CTA pulse animation
+  const ctaPulse = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(ctaPulse, {
+          toValue: 1.03,
+          duration: 1200,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(ctaPulse, {
+          toValue: 1,
+          duration: 1200,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [ctaPulse]);
+
+  // ── Handlers ──
+
+  const selectPlan = useCallback((plan: 'monthly' | 'yearly') => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedPlan(plan);
+  }, []);
+
+  const handlePurchase = useCallback(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setShowConfetti(true);
+    setTimeout(() => onClose(), 3000);
+  }, [onClose]);
+
+  const handleRestore = useCallback(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setShowConfetti(true);
+    setTimeout(() => onClose(), 3000);
+  }, [onClose]);
+
+  const ctaText = selectedPlan === 'yearly'
+    ? t('plus.subscribeYearly')
+    : t('plus.subscribeMonthly');
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
-          <Feather name="x" size={22} color={colors.text} />
-        </TouchableOpacity>
+        {showCloseButton ? (
+          <Animated.View style={{ opacity: closeOpacity }}>
+            <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
+              <Feather name="x" size={22} color={colors.text} />
+            </TouchableOpacity>
+          </Animated.View>
+        ) : (
+          <View style={styles.closePlaceholder} />
+        )}
       </View>
 
       <ScrollView
@@ -48,6 +138,7 @@ export default function PlusScreen({ onClose }: PlusScreenProps) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
+        {/* Hero */}
         <LinearGradient
           colors={isDark
             ? ['#3A2200', '#2A1800', colors.surface]
@@ -66,10 +157,11 @@ export default function PlusScreen({ onClose }: PlusScreenProps) {
           </Text>
         </LinearGradient>
 
-        <View style={styles.planSelector}>
+        {/* Plan Selector */}
+        <View style={styles.planRow}>
           <TouchableOpacity
             style={[styles.planCard, selectedPlan === 'yearly' && styles.planCardActive]}
-            onPress={() => setSelectedPlan('yearly')}
+            onPress={() => selectPlan('yearly')}
             activeOpacity={0.8}
           >
             {selectedPlan === 'yearly' && (
@@ -80,12 +172,14 @@ export default function PlusScreen({ onClose }: PlusScreenProps) {
             <Text style={[styles.planDuration, selectedPlan === 'yearly' && styles.planDurationActive]}>
               {t('plus.yearly')}
             </Text>
-            <Text style={[styles.planPrice, selectedPlan === 'yearly' && styles.planPriceActive]}>
-              ₺249,99
-            </Text>
-            <Text style={[styles.planUnit, selectedPlan === 'yearly' && styles.planUnitActive]}>
-              {t('plus.perYear')}
-            </Text>
+            <View style={styles.planPriceRow}>
+              <Text style={[styles.planPrice, selectedPlan === 'yearly' && styles.planPriceActive]}>
+                ₺249,99
+              </Text>
+              <Text style={[styles.planUnit, selectedPlan === 'yearly' && styles.planUnitActive]}>
+                {t('plus.perYear')}
+              </Text>
+            </View>
             <Text style={[styles.planSave, selectedPlan === 'yearly' && styles.planSaveActive]}>
               {t('plus.yearlySaving')}
             </Text>
@@ -93,62 +187,79 @@ export default function PlusScreen({ onClose }: PlusScreenProps) {
 
           <TouchableOpacity
             style={[styles.planCard, selectedPlan === 'monthly' && styles.planCardActive]}
-            onPress={() => setSelectedPlan('monthly')}
+            onPress={() => selectPlan('monthly')}
             activeOpacity={0.8}
           >
             <Text style={[styles.planDuration, selectedPlan === 'monthly' && styles.planDurationActive]}>
               {t('plus.monthly')}
             </Text>
-            <Text style={[styles.planPrice, selectedPlan === 'monthly' && styles.planPriceActive]}>
-              ₺34,99
-            </Text>
-            <Text style={[styles.planUnit, selectedPlan === 'monthly' && styles.planUnitActive]}>
-              {t('plus.perMonth')}
-            </Text>
+            <View style={styles.planPriceRow}>
+              <Text style={[styles.planPrice, selectedPlan === 'monthly' && styles.planPriceActive]}>
+                ₺34,99
+              </Text>
+              <Text style={[styles.planUnit, selectedPlan === 'monthly' && styles.planUnitActive]}>
+                {t('plus.perMonth')}
+              </Text>
+            </View>
+            <Text style={styles.planNote}>₺419,88{t('plus.perYear')}</Text>
           </TouchableOpacity>
         </View>
 
+        {/* Features */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('plus.featuresTitle')}</Text>
           <View style={styles.featureList}>
             {FEATURES.map((feature, index) => (
-              <View
+              <Animated.View
                 key={feature.title}
-                style={[styles.featureRow, index < FEATURES.length - 1 && styles.featureRowBorder]}
+                style={{
+                  opacity: featureAnims[index],
+                  transform: [{
+                    translateY: featureAnims[index].interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [20, 0],
+                    }),
+                  }],
+                }}
               >
-                <View style={styles.featureIcon}>
-                  <MaterialCommunityIcons name={feature.icon} size={20} color={colors.orange} />
+                <View
+                  style={[styles.featureRow, index < FEATURES.length - 1 && styles.featureRowBorder]}
+                >
+                  <View style={styles.featureIcon}>
+                    <MaterialCommunityIcons name={feature.icon} size={20} color={colors.orange} />
+                  </View>
+                  <View style={styles.featureCopy}>
+                    <Text style={styles.featureTitle}>{feature.title}</Text>
+                    <Text style={styles.featureDesc}>{feature.desc}</Text>
+                  </View>
                 </View>
-                <View style={styles.featureCopy}>
-                  <Text style={styles.featureTitle}>{feature.title}</Text>
-                  <Text style={styles.featureDesc}>{feature.desc}</Text>
-                </View>
-              </View>
+              </Animated.View>
             ))}
           </View>
         </View>
 
+        {/* CTA */}
         <View style={styles.ctaWrap}>
-          <TouchableOpacity style={styles.ctaBtn} activeOpacity={0.85}>
-            <LinearGradient
-              colors={['#FF8A1F', '#E06B00']}
-              style={styles.ctaGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <MaterialCommunityIcons name="crown" size={20} color="#FFFFFF" />
-              <Text style={styles.ctaText}>
-                {selectedPlan === 'yearly' ? t('plus.subscribeYearly') : t('plus.subscribeMonthly')}
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
+          <Animated.View style={{ transform: [{ scale: ctaPulse }], width: '100%' }}>
+            <TouchableOpacity style={styles.ctaBtn} activeOpacity={0.85} onPress={handlePurchase}>
+              <LinearGradient
+                colors={['#FF8A1F', '#E06B00']}
+                style={styles.ctaGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <MaterialCommunityIcons name="crown" size={20} color="#FFFFFF" />
+                <Text style={styles.ctaText}>{ctaText}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
 
           <Text style={styles.ctaNote}>
             {t('plus.trialNote')}
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.restoreBtn} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.restoreBtn} activeOpacity={0.7} onPress={handleRestore}>
           <Text style={styles.restoreText}>{t('plus.restorePurchase')}</Text>
         </TouchableOpacity>
 
@@ -156,6 +267,21 @@ export default function PlusScreen({ onClose }: PlusScreenProps) {
           {t('plus.legalNote')}
         </Text>
       </ScrollView>
+
+      {/* Confetti */}
+      {showConfetti && (
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          <ConfettiCannon
+            count={120}
+            origin={{ x: -10, y: 0 }}
+            fadeOut
+            autoStart
+            explosionSpeed={300}
+            fallSpeed={2500}
+            colors={[colors.orange, colors.orangeLight, colors.green, '#FFD700', '#FF6B6B', '#A855F7']}
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -182,6 +308,10 @@ function createStyles(colors: AppColors, isDark: boolean) {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    closePlaceholder: {
+      width: 36,
+      height: 36,
+    },
     scroll: {
       flex: 1,
     },
@@ -190,6 +320,8 @@ function createStyles(colors: AppColors, isDark: boolean) {
       paddingBottom: 40,
       gap: 22,
     },
+
+    // Hero
     heroGradient: {
       borderRadius: 28,
       padding: 28,
@@ -218,7 +350,9 @@ function createStyles(colors: AppColors, isDark: boolean) {
       color: colors.muted,
       textAlign: 'center',
     },
-    planSelector: {
+
+    // Plan Selector
+    planRow: {
       flexDirection: 'row',
       gap: 12,
     },
@@ -258,32 +392,43 @@ function createStyles(colors: AppColors, isDark: boolean) {
       color: colors.text,
     },
     planPrice: {
-      fontSize: 24,
+      fontSize: 20,
       fontWeight: '800',
       color: colors.text,
-      marginTop: 6,
     },
     planPriceActive: {
       color: colors.orange,
     },
+    planPriceRow: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      marginTop: 6,
+    },
     planUnit: {
       fontSize: 12,
       color: colors.muted,
-      marginTop: 2,
+      marginLeft: 2,
     },
     planUnitActive: {
       color: colors.orangeDark,
     },
+    planNote: {
+      fontSize: 11,
+      color: colors.muted,
+      marginTop: 4,
+    },
     planSave: {
       fontSize: 11,
       color: colors.muted,
-      marginTop: 8,
+      marginTop: 4,
       textAlign: 'center',
     },
     planSaveActive: {
       color: colors.green,
       fontWeight: '600',
     },
+
+    // Features
     section: {
       gap: 12,
     },
@@ -334,6 +479,8 @@ function createStyles(colors: AppColors, isDark: boolean) {
       lineHeight: 17,
       color: colors.muted,
     },
+
+    // CTA
     ctaWrap: {
       alignItems: 'center',
       gap: 10,

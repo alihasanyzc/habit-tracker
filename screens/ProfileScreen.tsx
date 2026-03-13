@@ -43,7 +43,6 @@ export default function ProfileScreen() {
   const [form, setForm] = useState({ name: '', email: '', phone: '' });
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const currentLanguage = LANG_OPTIONS.find(option => option.value === language) ?? LANG_OPTIONS[0];
 
   const updateField = (key: keyof typeof form, value: string) =>
     setForm(prev => ({ ...prev, [key]: value }));
@@ -241,39 +240,26 @@ export default function ProfileScreen() {
               <View style={styles.rowIcon}>
                 <Feather name="globe" size={16} color={colors.orange} />
               </View>
-              <View style={styles.languageRowContent}>
-                <View style={styles.languageHeader}>
-                  <Text style={styles.rowLabel}>{t('profile.language')}</Text>
-                  <Text style={styles.languageHint}>
-                  {t('profile.languageSelected', { language: currentLanguage.label })}
-                  </Text>
-                </View>
-                <View style={styles.languageSegment}>
-                  {LANG_OPTIONS.map((option) => {
-                    const selected = option.value === language;
+              <View style={styles.rowCopy}>
+                <Text style={styles.rowLabel}>{t('profile.language')}</Text>
+              </View>
+              <View style={styles.langToggle}>
+                {LANG_OPTIONS.map((option) => {
+                  const selected = option.value === language;
 
-                    return (
-                      <TouchableOpacity
-                        key={option.value}
-                        onPress={() => void setLanguage(option.value)}
-                        activeOpacity={0.85}
-                        style={[
-                          styles.languageSegmentButton,
-                          selected && styles.languageSegmentButtonSelected,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.languageSegmentLabel,
-                            selected && styles.languageSegmentLabelSelected,
-                          ]}
-                        >
-                          {option.label}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
+                  return (
+                    <TouchableOpacity
+                      key={option.value}
+                      onPress={() => void setLanguage(option.value)}
+                      activeOpacity={0.7}
+                      style={[styles.langBtn, selected && styles.langBtnSelected]}
+                    >
+                      <Text style={[styles.langBtnLabel, selected && styles.langBtnLabelSelected]}>
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
           </View>
@@ -429,45 +415,29 @@ function createStyles(colors: AppColors, isDark: boolean) {
       fontWeight: '600' as const,
       color: '#fff',
     },
-    languageRowContent: {
-      flex: 1,
-    },
-    languageHeader: {
+    langToggle: {
       flexDirection: 'row' as const,
-      alignItems: 'baseline' as const,
-      justifyContent: 'space-between' as const,
-      gap: 12,
-    },
-    languageHint: {
-      fontSize: 12,
-      color: colors.muted,
-    },
-    languageSegment: {
-      marginTop: 12,
-      flexDirection: 'row' as const,
-      gap: 8,
       backgroundColor: colors.surfaceAlt,
-      borderRadius: 14,
-      padding: 4,
-    },
-    languageSegmentButton: {
-      flex: 1,
-      minHeight: 40,
       borderRadius: 10,
-      alignItems: 'center' as const,
-      justifyContent: 'center' as const,
+      padding: 3,
+      gap: 2,
     },
-    languageSegmentButtonSelected: {
+    langBtn: {
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      borderRadius: 8,
+    },
+    langBtnSelected: {
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: isDark ? colors.border : '#F2E2D4',
     },
-    languageSegmentLabel: {
-      fontSize: 14,
+    langBtnLabel: {
+      fontSize: 12,
       fontWeight: '600' as const,
       color: colors.muted,
     },
-    languageSegmentLabelSelected: {
+    langBtnLabelSelected: {
       color: colors.orange,
     },
   });
