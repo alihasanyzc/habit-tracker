@@ -23,6 +23,26 @@
       "eas": {
         "projectId": "a22b3d25-1d53-4455-86a7-b2c3f759b44c"
       }
-    }
+    },
+    "plugins": [
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.com.habition",
+          "widgets": [
+            {
+              "name": "GlassHabitWidget",
+              "displayName": "Glass Habit",
+              "description": "Shows a weekly habit strip with a translucent iOS glass style.",
+              "supportedFamilies": [
+                "systemMedium"
+              ],
+              "contentMarginsDisabled": true
+            }
+          ]
+        }
+      ],
+      "expo-localization"
+    ]
   }
 }

@@ -147,17 +147,35 @@ export async function getLocalHabitData(): Promise<LocalHabitData> {
 }
 
 export async function saveLocalHabitData(data: LocalHabitData) {
+  const nextData = {
+    ...data,
+    updatedAt: new Date().toISOString(),
+  };
+
   await setStoredItem(
     STORAGE_KEYS.habits,
-    JSON.stringify({
-      ...data,
-      updatedAt: new Date().toISOString(),
-    })
+    JSON.stringify(nextData)
   );
+
+  try {
+    const { syncGlassHabitWidget } = await import('../widgets/glassHabitWidgetSync');
+    const language = await getLanguagePreference();
+    await syncGlassHabitWidget(nextData, language);
+  } catch (error) {
+    console.warn('Failed to sync GlassHabitWidget snapshot.', error);
+  }
 }
 
 export async function clearLocalHabitData() {
   await removeStoredItem(STORAGE_KEYS.habits);
+
+  try {
+    const { syncGlassHabitWidget } = await import('../widgets/glassHabitWidgetSync');
+    const language = await getLanguagePreference();
+    await syncGlassHabitWidget(createEmptyHabitData(), language);
+  } catch (error) {
+    console.warn('Failed to clear GlassHabitWidget snapshot.', error);
+  }
 }
 
 export async function getLanguagePreference(): Promise<string | null> {
@@ -166,6 +184,14 @@ export async function getLanguagePreference(): Promise<string | null> {
 
 export async function setLanguagePreference(language: string) {
   await setStoredItem(STORAGE_KEYS.languagePreference, language);
+
+  try {
+    const { syncGlassHabitWidget } = await import('../widgets/glassHabitWidgetSync');
+    const data = await getLocalHabitData();
+    await syncGlassHabitWidget(data, language);
+  } catch (error) {
+    console.warn('Failed to sync GlassHabitWidget language.', error);
+  }
 }
 
 export async function getOnboardingDone(): Promise<boolean> {

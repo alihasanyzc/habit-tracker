@@ -10,6 +10,7 @@ import { useAppColors, useIsDark } from './constants/colors';
 import { ThemeProvider } from './providers/ThemeProvider';
 import { LanguageProvider } from './providers/LanguageProvider';
 import { getOnboardingDone, setOnboardingDone } from './utils/storage';
+import { syncGlassHabitWidgetFromStorage } from './widgets/glassHabitWidgetSync';
 
 export default function App() {
   return (
@@ -32,6 +33,12 @@ function AppContent() {
 
   useEffect(() => {
     getOnboardingDone().then(setDone);
+  }, []);
+
+  useEffect(() => {
+    syncGlassHabitWidgetFromStorage().catch((error) => {
+      console.warn('Failed to hydrate GlassHabitWidget snapshot on launch.', error);
+    });
   }, []);
 
   const handleOnboardingDone = useCallback(async () => {

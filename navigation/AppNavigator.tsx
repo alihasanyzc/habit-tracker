@@ -2,6 +2,7 @@ import React, { useMemo, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform, PanResponder } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import {
+  createNavigationContainerRef,
   DarkTheme,
   DefaultTheme,
   NavigationContainer,
@@ -19,6 +20,7 @@ import { useAppColors, useIsDark, type AppColors } from '../constants/colors';
 import { useLanguage } from '../providers/LanguageProvider';
 
 const Tab = createBottomTabNavigator();
+const navigationRef = createNavigationContainerRef();
 
 const TAB_ROUTES = ['Home', 'Stats', 'Create', 'Habit', 'Profile'];
 
@@ -142,9 +144,47 @@ export default function AppNavigator() {
     fonts: isDark ? DarkTheme.fonts : DefaultTheme.fonts,
   }), [colors, isDark]);
 
+  React.useEffect(() => {
+    if (Platform.OS !== 'ios') {
+      return;
+    }
+
+    let subscription: { remove: () => void } | null = null;
+    let isActive = true;
+
+    void import('expo-widgets')
+      .then(({ addUserInteractionListener }) => {
+        if (!isActive) {
+          return;
+        }
+
+        subscription = addUserInteractionListener((event) => {
+          if (!navigationRef.isReady()) {
+            return;
+          }
+
+          if (event.target === 'open-stats') {
+            navigationRef.navigate('Stats' as never);
+          }
+        });
+      })
+      .catch((error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.includes("Cannot find native module 'ExpoWidgets'")) {
+          return;
+        }
+        console.warn('Failed to attach widget interaction listener.', error);
+      });
+
+    return () => {
+      isActive = false;
+      subscription?.remove();
+    };
+  }, []);
+
   return (
     <View style={styles.root}>
-      <NavigationContainer theme={navigationTheme}>
+      <NavigationContainer ref={navigationRef} theme={navigationTheme}>
         <Tab.Navigator
           tabBar={props => <CustomTabBar {...props} />}
           screenOptions={{
