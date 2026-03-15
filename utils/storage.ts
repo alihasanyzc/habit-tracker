@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   languagePreference: 'app_language_preference',
   onboardingDone: 'onboarding_done',
 } as const;
+const ONBOARDING_VERSION = 'v3';
 
 const DEFAULT_PLAN: UserPlan = 'guest';
 const DEFAULT_THEME_PREFERENCE: ThemePreference = 'system';
@@ -196,9 +197,9 @@ export async function setLanguagePreference(language: string) {
 
 export async function getOnboardingDone(): Promise<boolean> {
   const value = await getStoredItem(STORAGE_KEYS.onboardingDone);
-  return value === 'true';
+  return value === ONBOARDING_VERSION;
 }
 
 export async function setOnboardingDone() {
-  await setStoredItem(STORAGE_KEYS.onboardingDone, 'true');
+  await setStoredItem(STORAGE_KEYS.onboardingDone, ONBOARDING_VERSION);
 }

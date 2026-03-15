@@ -1,16 +1,13 @@
 import 'react-native-gesture-handler';
-import { useState, useEffect, useCallback } from 'react';
-import { View } from 'react-native';
+import { useState, useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './navigation/AppNavigator';
-import OnboardingScreen from './screens/OnboardingScreen';
+import AuthScreen from './screens/AuthScreen';
 import { ToastProvider } from './components/ToastProvider';
 import { useAppColors, useIsDark } from './constants/colors';
 import { ThemeProvider } from './providers/ThemeProvider';
 import { LanguageProvider } from './providers/LanguageProvider';
-import { getOnboardingDone, setOnboardingDone } from './utils/storage';
-import { syncGlassHabitWidgetFromStorage } from './widgets/glassHabitWidgetSync';
 
 export default function App() {
   return (
@@ -29,26 +26,11 @@ export default function App() {
 function AppContent() {
   const colors = useAppColors();
   const isDark = useIsDark();
-  const [onboardingDone, setDone] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    getOnboardingDone().then(setDone);
-  }, []);
-
-  useEffect(() => {
-    syncGlassHabitWidgetFromStorage().catch((error) => {
-      console.warn('Failed to hydrate GlassHabitWidget snapshot on launch.', error);
-    });
-  }, []);
+  const [onboardingDone, setDone] = useState(false);
 
   const handleOnboardingDone = useCallback(async () => {
-    await setOnboardingDone();
     setDone(true);
   }, []);
-
-  if (onboardingDone === null) {
-    return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
-  }
 
   return (
     <>
@@ -56,7 +38,7 @@ function AppContent() {
       {onboardingDone ? (
         <AppNavigator />
       ) : (
-        <OnboardingScreen onDone={handleOnboardingDone} />
+        <AuthScreen onDone={handleOnboardingDone} />
       )}
     </>
   );
