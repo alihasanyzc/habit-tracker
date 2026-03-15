@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './navigation/AppNavigator';
-import OnboardingScreen from './screens/OnboardingScreen';
+import AuthScreen from './screens/AuthScreen';
 import { ToastProvider } from './components/ToastProvider';
 import { useAppColors, useIsDark } from './constants/colors';
 import { ThemeProvider } from './providers/ThemeProvider';
@@ -38,7 +38,7 @@ function AppContent() {
       {onboardingDone ? (
         <AppNavigator />
       ) : (
-        <OnboardingScreen onDone={handleOnboardingDone} />
+        <AuthScreen onDone={handleOnboardingDone} />
       )}
     </>
   );
