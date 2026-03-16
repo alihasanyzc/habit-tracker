@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import MaskInput from 'react-native-mask-input';
 import ScreenHeader from '../components/ScreenHeader';
 import ProfileThemeCard from '../components/ProfileThemeCard';
 import PlusScreen from './PlusScreen';
@@ -25,6 +26,8 @@ const LANG_OPTIONS: Array<{ value: AppLanguage; label: string }> = [
   { value: 'tr', label: 'Türkçe' },
   { value: 'en', label: 'English' },
 ];
+
+const PHONE_MASK = ['(', /\d/, /\d/, /\d/, ')', ' ', /\d/, /\d/, /\d/, ' ', /\d/, /\d/, ' ', /\d/, /\d/];
 
 export default function ProfileScreen() {
   const colors = useAppColors();
@@ -117,24 +120,40 @@ export default function ProfileScreen() {
             {PROFILE_FIELDS.map((field, index) => (
               <View
                 key={field.label}
-                style={[styles.row, index < PROFILE_FIELDS.length - 1 && styles.rowBorder]}
+                style={[
+                  styles.row,
+                  editingSection === 'profile' && styles.rowEditing,
+                  index < PROFILE_FIELDS.length - 1 && styles.rowBorder,
+                ]}
               >
-                <View style={styles.rowIcon}>
+                <View style={[styles.rowIcon, editingSection === 'profile' && styles.rowIconEditing]}>
                   <Feather name={field.icon} size={16} color={colors.orange} />
                 </View>
 
                 <View style={styles.rowCopy}>
                   <Text style={styles.rowLabel}>{field.label}</Text>
                   {editingSection === 'profile' ? (
-                    <TextInput
-                      value={form[field.key]}
-                      onChangeText={(v) => updateField(field.key, v)}
-                      placeholder={field.placeholder}
-                      placeholderTextColor={colors.muted}
-                      keyboardType={field.keyboard}
-                      autoCapitalize={field.key === 'email' ? 'none' : 'words'}
-                      style={styles.input}
-                    />
+                    field.key === 'phone' ? (
+                      <MaskInput
+                        value={form.phone}
+                        onChangeText={(masked) => updateField('phone', masked)}
+                        placeholder={field.placeholder}
+                        placeholderTextColor={colors.muted}
+                        keyboardType="phone-pad"
+                        mask={PHONE_MASK}
+                        style={styles.input}
+                      />
+                    ) : (
+                      <TextInput
+                        value={form[field.key]}
+                        onChangeText={(v) => updateField(field.key, v)}
+                        placeholder={field.placeholder}
+                        placeholderTextColor={colors.muted}
+                        keyboardType={field.keyboard}
+                        autoCapitalize={field.key === 'email' ? 'none' : 'words'}
+                        style={styles.input}
+                      />
+                    )
                   ) : (
                     <Text style={[styles.rowValue, form[field.key] && styles.rowValueFilled]}>
                       {form[field.key] || t('profile.notAdded')}
@@ -311,6 +330,9 @@ function createStyles(colors: AppColors, isDark: boolean) {
       paddingHorizontal: 16,
       paddingVertical: 14,
     },
+    rowEditing: {
+      alignItems: 'flex-start',
+    },
     rowBorder: {
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
@@ -323,6 +345,9 @@ function createStyles(colors: AppColors, isDark: boolean) {
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 12,
+    },
+    rowIconEditing: {
+      marginTop: 23,
     },
     rowCopy: {
       flex: 1,
