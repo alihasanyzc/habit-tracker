@@ -25,23 +25,6 @@
       }
     },
     "plugins": [
-      [
-        "expo-widgets",
-        {
-          "groupIdentifier": "group.com.habition",
-          "widgets": [
-            {
-              "name": "GlassHabitWidget",
-              "displayName": "Glass Habit",
-              "description": "Shows a weekly habit strip with a translucent iOS glass style.",
-              "supportedFamilies": [
-                "systemMedium"
-              ],
-              "contentMarginsDisabled": true
-            }
-          ]
-        }
-      ],
       "expo-localization"
     ]
   }

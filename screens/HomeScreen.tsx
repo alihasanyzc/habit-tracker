@@ -38,6 +38,7 @@ import {
   parseDateKey,
 } from '../utils/habitMetrics';
 import { useLanguage } from '../providers/LanguageProvider';
+import HabitIcon from '../components/HabitIcon';
 
 const PAST_WEEKS_COUNT = 104;
 const WEEK_PAGE_CHANGE_THRESHOLD = 0.28;
@@ -179,7 +180,7 @@ export function HabitCard({
         {...(!habit.completed ? panResponder.panHandlers : {})}
       >
         <View style={[styles.emojiBox, { opacity: habit.completed ? 0.65 : 1 }]}>
-          <MaterialCommunityIcons name={habit.icon as any} size={22} color={habit.iconColor} />
+          <HabitIcon icon={habit.icon} size={22} color={habit.iconColor} />
         </View>
 
         <Text style={[styles.habitName, habit.completed && styles.habitNameDone]}>

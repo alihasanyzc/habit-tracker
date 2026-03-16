@@ -144,44 +144,6 @@ export default function AppNavigator() {
     fonts: isDark ? DarkTheme.fonts : DefaultTheme.fonts,
   }), [colors, isDark]);
 
-  React.useEffect(() => {
-    if (Platform.OS !== 'ios') {
-      return;
-    }
-
-    let subscription: { remove: () => void } | null = null;
-    let isActive = true;
-
-    void import('expo-widgets')
-      .then(({ addUserInteractionListener }) => {
-        if (!isActive) {
-          return;
-        }
-
-        subscription = addUserInteractionListener((event) => {
-          if (!navigationRef.isReady()) {
-            return;
-          }
-
-          if (event.target === 'open-stats') {
-            navigationRef.navigate('Stats' as never);
-          }
-        });
-      })
-      .catch((error) => {
-        const message = error instanceof Error ? error.message : String(error);
-        if (message.includes("Cannot find native module 'ExpoWidgets'")) {
-          return;
-        }
-        console.warn('Failed to attach widget interaction listener.', error);
-      });
-
-    return () => {
-      isActive = false;
-      subscription?.remove();
-    };
-  }, []);
-
   return (
     <View style={styles.root}>
       <NavigationContainer ref={navigationRef} theme={navigationTheme}>

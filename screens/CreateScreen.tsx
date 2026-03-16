@@ -9,7 +9,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import ScreenHeader from '../components/ScreenHeader';
 import BottomSheet from '../components/BottomSheet';
-import PillTabs from '../components/PillTabs';
+import HabitIcon from '../components/HabitIcon';
 import { useAppColors, useIsDark, type AppColors } from '../constants/colors';
 import { HabitCard } from './HomeScreen';
 import { useToast } from '../components/ToastProvider';
@@ -19,32 +19,360 @@ import { useLanguage } from '../providers/LanguageProvider';
 
 const SCREEN_H = Dimensions.get('window').height;
 const ICON_PICKER_GLYPH_SIZE = 20;
+const ICON_GRID_COLUMNS = 6;
 
-// ── Icon listeleri (MaterialCommunityIcons) ──────────────
-type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
+// ── Aktivite ikonları ───────────────────────────────────
+type IconName = string;
+type IconOption = {
+  value: IconName;
+  search: string[];
+};
+type IconGridItem =
+  | { type: 'icon'; option: IconOption }
+  | { type: 'placeholder'; key: string };
 
-const ICONS_ACTIVITY: IconName[] = [
-  'run', 'walk', 'bike', 'swim', 'yoga', 'dumbbell', 'basketball', 'soccer',
-  'tennis', 'trophy', 'medal', 'target', 'rowing', 'ski', 'skateboarding', 'hiking',
-  'golf', 'boxing-glove', 'karate', 'football', 'weight-lifter', 'fencing',
-  'handball', 'surfing', 'run-fast', 'jump-rope', 'meditation', 'arm-flex',
-  'baseball', 'volleyball', 'rugby', 'badminton', 'table-tennis', 'sail-boat',
-  'ski-water', 'timer-outline', 'podium-gold', 'arch', 'bullseye-arrow', 'kayaking',
-  'baseball-bat', 'hockey-sticks', 'cricket', 'ski-cross-country', 'snowboard',
-  'tennis-ball', 'whistle', 'scoreboard-outline', 'target-variant', 'timer-sand',
-  'map-marker-distance', 'trophy-outline',
-];
-const ICONS_LIFESTYLE: IconName[] = [
-  'book-open-variant', 'music', 'leaf', 'lightbulb', 'brain', 'pencil', 'palette',
-  'guitar-acoustic', 'food-apple', 'sleep', 'flower', 'water', 'silverware-fork-knife',
-  'broom', 'note-text', 'flask', 'bullseye', 'cash', 'moon-waning-crescent',
-  'white-balance-sunny', 'handshake', 'heart', 'hands-pray', 'coffee-outline', 'tea',
-  'briefcase-outline', 'laptop', 'notebook-outline', 'camera-outline', 'microphone-outline',
-  'airballoon', 'carrot', 'pill', 'stethoscope', 'dog', 'cat', 'baby-face-outline',
-  'book-heart-outline', 'notebook-edit-outline', 'movie-open-outline', 'gamepad-variant-outline',
-  'headphones', 'food-croissant', 'hamburger', 'ice-cream', 'glass-cocktail',
-  'alarm', 'bed-outline', 'shoe-sneaker',
-];
+function normalizeSearchValue(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function getSearchTokens(value: string) {
+  return normalizeSearchValue(value)
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+}
+
+const TOKEN_TR_MAP: Record<string, string[]> = {
+  account: ['hesap'],
+  add: ['ekle'],
+  alert: ['uyari', 'uyarı', 'alarm'],
+  arrow: ['ok'],
+  bag: ['canta', 'çanta'],
+  ball: ['top'],
+  bank: ['banka'],
+  base: ['temel'],
+  battery: ['pil', 'batarya'],
+  beach: ['plaj'],
+  bed: ['yatak'],
+  bell: ['zil', 'bildirim'],
+  bike: ['bisiklet'],
+  book: ['kitap'],
+  bottle: ['sise', 'şişe'],
+  box: ['kutu'],
+  brain: ['beyin', 'zeka', 'zeka'],
+  briefcase: ['evrak', 'canta', 'çanta', 'is', 'iş'],
+  brightness: ['parlaklik', 'parlaklık'],
+  broom: ['supurge', 'süpürge'],
+  brush: ['firca', 'fırça'],
+  bug: ['hata', 'bocek', 'böcek'],
+  bullseye: ['hedef'],
+  bus: ['otobus', 'otobüs'],
+  calendar: ['takvim'],
+  camera: ['kamera'],
+  camp: ['kamp'],
+  cancel: ['iptal'],
+  car: ['araba'],
+  card: ['kart'],
+  cash: ['nakit', 'para'],
+  cat: ['kedi'],
+  cell: ['hucre', 'hücre'],
+  chart: ['grafik'],
+  check: ['kontrol', 'onay', 'tik'],
+  checkbox: ['onay kutusu'],
+  chevron: ['ok'],
+  circle: ['daire', 'yuvarlak'],
+  city: ['sehir', 'şehir'],
+  clock: ['saat'],
+  close: ['kapat', 'kapatma'],
+  cloud: ['bulut'],
+  coffee: ['kahve'],
+  cog: ['ayar'],
+  compass: ['pusula'],
+  content: ['icerik', 'içerik'],
+  controller: ['kumanda'],
+  cookie: ['kurabiye'],
+  counter: ['sayac', 'sayaç'],
+  credit: ['kredi'],
+  crop: ['kirp', 'kırp'],
+  crown: ['taç'],
+  cup: ['bardak', 'kupa'],
+  cursor: ['imlec', 'imleç'],
+  delete: ['sil'],
+  diamond: ['elmas'],
+  directions: ['yon', 'yön'],
+  dog: ['kopek', 'köpek'],
+  door: ['kapi', 'kapı'],
+  download: ['indir'],
+  dumbbell: ['dambıl', 'agirlik', 'ağırlık'],
+  earth: ['dunya', 'dünya'],
+  email: ['eposta', 'mail'],
+  eye: ['goz', 'göz'],
+  face: ['yuz', 'yüz'],
+  file: ['dosya'],
+  filter: ['filtre'],
+  fire: ['ates', 'ateş'],
+  fish: ['balik', 'balık'],
+  flag: ['bayrak'],
+  flash: ['flaş', 'simsek', 'şimşek'],
+  flask: ['sisecik', 'şişecik', 'laboratuvar'],
+  flower: ['cicek', 'çiçek'],
+  folder: ['klasor', 'klasör'],
+  food: ['yiyecek', 'yemek'],
+  football: ['futbol'],
+  format: ['bicim', 'biçim'],
+  gamepad: ['oyun', 'kol'],
+  gift: ['hediye'],
+  glass: ['bardak', 'cam'],
+  globe: ['dunya', 'küre', 'dünya'],
+  golf: ['golf'],
+  gym: ['spor salonu'],
+  hammer: ['cicek', 'çekiç'],
+  hand: ['el'],
+  handbag: ['canta', 'çanta'],
+  heart: ['kalp'],
+  help: ['yardim', 'yardım'],
+  home: ['ev', 'ana sayfa'],
+  hospital: ['hastane'],
+  image: ['gorsel', 'görsel', 'resim'],
+  information: ['bilgi'],
+  key: ['anahtar'],
+  keyboard: ['klavye'],
+  lamp: ['lamba'],
+  laptop: ['laptop', 'bilgisayar'],
+  leaf: ['yaprak'],
+  light: ['isik', 'ışık'],
+  lightning: ['simsek', 'şimşek'],
+  link: ['baglanti', 'bağlantı'],
+  list: ['liste'],
+  location: ['konum'],
+  lock: ['kilit'],
+  mail: ['posta', 'eposta'],
+  map: ['harita'],
+  marker: ['isaret', 'işaret'],
+  medal: ['madalya'],
+  menu: ['menu', 'menü'],
+  message: ['mesaj'],
+  microphone: ['mikrofon'],
+  minus: ['eksi'],
+  moon: ['ay'],
+  music: ['muzik', 'müzik'],
+  navigation: ['yonlendirme', 'yönlendirme'],
+  note: ['not'],
+  notebook: ['defter'],
+  notification: ['bildirim'],
+  office: ['ofis'],
+  open: ['ac', 'aç'],
+  outline: ['cizgi', 'çizgi', 'hat'],
+  palette: ['palet', 'renk'],
+  paper: ['kagit', 'kağıt'],
+  pause: ['duraklat'],
+  pencil: ['kalem'],
+  percent: ['yuzde', 'yüzde'],
+  phone: ['telefon'],
+  pill: ['ilac', 'ilaç'],
+  pin: ['iğne', 'igne', 'sabitle'],
+  play: ['oynat'],
+  plus: ['arti', 'artı'],
+  pulse: ['nabiz', 'nabız'],
+  racket: ['raket'],
+  road: ['yol'],
+  robot: ['robot'],
+  rocket: ['roket'],
+  room: ['oda'],
+  rope: ['ip'],
+  run: ['kosu', 'koşu', 'kosmak', 'koşmak'],
+  save: ['kaydet'],
+  scale: ['olcek', 'ölçek', 'tarti', 'tartı'],
+  school: ['okul'],
+  search: ['ara', 'arama'],
+  send: ['gonder', 'gönder'],
+  server: ['sunucu'],
+  settings: ['ayarlar'],
+  shape: ['sekil', 'şekil'],
+  share: ['paylas', 'paylaş'],
+  shield: ['kalkan'],
+  shoe: ['ayakkabi', 'ayakkabı'],
+  shopping: ['alisveris', 'alışveriş'],
+  sign: ['isaret', 'işaret'],
+  silverware: ['catal', 'çatal', 'bicak', 'bıçak'],
+  sleep: ['uyku', 'uyumak'],
+  snow: ['kar'],
+  soccer: ['futbol'],
+  sound: ['ses'],
+  speaker: ['hoparlor', 'hoparlör'],
+  speedometer: ['hiz gostergesi', 'hız göstergesi'],
+  star: ['yildiz', 'yıldız'],
+  station: ['istasyon'],
+  stethoscope: ['stetoskop'],
+  stop: ['dur'],
+  store: ['magaza', 'mağaza'],
+  subway: ['metro'],
+  suitcase: ['valiz'],
+  sun: ['gunes', 'güneş'],
+  swim: ['yuzme', 'yüzme'],
+  sync: ['senkronize'],
+  table: ['masa'],
+  target: ['hedef'],
+  tea: ['cay', 'çay'],
+  tennis: ['tenis'],
+  timer: ['zamanlayici', 'zamanlayıcı'],
+  tool: ['arac', 'araç'],
+  tooth: ['dis', 'diş'],
+  torch: ['mesale', 'meşale'],
+  track: ['iz', 'takip'],
+  train: ['tren'],
+  trash: ['cop', 'çöp'],
+  tree: ['agac', 'ağaç'],
+  trophy: ['kupa', 'odul', 'ödül'],
+  truck: ['kamyon'],
+  umbrella: ['semsiye', 'şemsiye'],
+  upload: ['yukle', 'yükle'],
+  video: ['video'],
+  view: ['gorunum', 'görünüm'],
+  wallet: ['cuzdan', 'cüzdan'],
+  walk: ['yuruyus', 'yürüyüş', 'yurumek', 'yürümek'],
+  wall: ['duvar'],
+  warning: ['uyari', 'uyarı'],
+  water: ['su'],
+  wave: ['dalga'],
+  weather: ['hava'],
+  weight: ['agirlik', 'ağırlık'],
+  wifi: ['wifi', 'kablosuz'],
+  wind: ['ruzgar', 'rüzgar'],
+  window: ['pencere'],
+  wrench: ['anahtar', 'tamir'],
+  yoga: ['yoga'],
+};
+
+const PHRASE_TR_MAP: Record<string, string[]> = {
+  'account plus': ['hesap arti', 'hesap arti'],
+  'air conditioner': ['klima'],
+  'arrow left': ['sol ok'],
+  'arrow right': ['sag ok', 'sağ ok'],
+  'arrow up': ['yukari ok', 'yukarı ok'],
+  'arrow down': ['asagi ok', 'aşağı ok'],
+  'baseball diamond': ['beysbol sahasi', 'beysbol elmasi'],
+  'battery charging': ['sarj olan pil', 'şarj olan pil'],
+  'book open': ['acik kitap', 'açık kitap'],
+  'boxing glove': ['boks eldiveni'],
+  'calendar check': ['takvim onay'],
+  'checkbox marked': ['isaretli kutu', 'işaretli kutu'],
+  'chevron left': ['sol yon', 'sol yön'],
+  'chevron right': ['sag yon', 'sağ yön'],
+  'close circle': ['kapat daire'],
+  'coffee outline': ['kahve cizgi', 'kahve çizgi'],
+  'credit card': ['kredi karti', 'kredi kartı'],
+  'heart pulse': ['kalp atisi', 'kalp atışı'],
+  'home outline': ['ev cizgi', 'ev çizgi'],
+  'jump rope': ['ip atlama'],
+  'map marker': ['harita isareti', 'harita işareti'],
+  'message text': ['metin mesaji', 'metin mesajı'],
+  'moon waning crescent': ['hilal', 'azalan ay'],
+  'table tennis': ['masa tenisi'],
+  'target variant': ['hedef cesidi', 'hedef çeşidi'],
+  'timer outline': ['zamanlayici cizgi', 'zamanlayıcı çizgi'],
+  'weight lifter': ['halterci', 'agirlik kaldiran', 'ağırlık kaldıran'],
+};
+
+function getAutoTranslatedTerms(iconName: string) {
+  const spaced = iconName.replace(/-/g, ' ');
+  const tokens = spaced.split(' ').filter(Boolean);
+  const translated = new Set<string>();
+  const normalizedPhrase = normalizeSearchValue(spaced);
+
+  const exactPhraseTranslations = PHRASE_TR_MAP[normalizedPhrase] ?? [];
+  exactPhraseTranslations.forEach((term) => translated.add(term));
+
+  for (let size = Math.min(3, tokens.length); size >= 2; size -= 1) {
+    for (let index = 0; index <= tokens.length - size; index += 1) {
+      const phrase = normalizeSearchValue(tokens.slice(index, index + size).join(' '));
+      (PHRASE_TR_MAP[phrase] ?? []).forEach((term) => translated.add(term));
+    }
+  }
+
+  const translatedTokens = tokens.flatMap((token) => TOKEN_TR_MAP[normalizeSearchValue(token)] ?? []);
+  translatedTokens.forEach((term) => translated.add(term));
+
+  if (translatedTokens.length) {
+    translated.add(translatedTokens.join(' '));
+  }
+
+  return Array.from(translated);
+}
+
+const GROUP_KEYWORDS = {
+  sport: ['sport', 'sports', 'ball', 'team', 'oyun', 'spor'],
+  cardio: ['cardio', 'run', 'walk', 'swim', 'bike', 'hareket'],
+  fitness: ['fitness', 'gym', 'workout', 'exercise', 'antrenman'],
+} as const;
+
+const ICON_KEYWORD_ALIASES: Record<string, string[]> = {
+  run: [...GROUP_KEYWORDS.cardio, 'jog', 'runner', 'kosu', 'koşu'],
+  'run-fast': [...GROUP_KEYWORDS.cardio, 'jog', 'runner', 'kosu', 'koşu', 'hizli kosu'],
+  walk: [...GROUP_KEYWORDS.cardio, 'steps', 'adim', 'adım', 'yuruyus', 'yürüyüş'],
+  bike: [...GROUP_KEYWORDS.cardio, 'bicycle', 'cycling', 'bisiklet'],
+  swim: [...GROUP_KEYWORDS.cardio, 'pool', 'water', 'yuzme', 'yüzme'],
+  basketball: [...GROUP_KEYWORDS.sport, 'basket', 'ball', 'basketbol'],
+  soccer: [...GROUP_KEYWORDS.sport, 'football', 'goal', 'futbol'],
+  football: [...GROUP_KEYWORDS.sport, 'rugby', 'ball', 'amerikan futbolu'],
+  tennis: [...GROUP_KEYWORDS.sport, 'racket', 'racquet', 'tenis'],
+  badminton: [...GROUP_KEYWORDS.sport, 'racket', 'racquet', 'badminton'],
+  cricket: [...GROUP_KEYWORDS.sport, 'bat', 'ball', 'kriket'],
+  golf: [...GROUP_KEYWORDS.sport, 'club', 'ball', 'golf'],
+  volleyball: [...GROUP_KEYWORDS.sport, 'voleybol'],
+  baseball: [...GROUP_KEYWORDS.sport, 'beysbol'],
+  'table-tennis': [...GROUP_KEYWORDS.sport, 'ping pong', 'racket', 'masa tenisi'],
+  dumbbell: [...GROUP_KEYWORDS.fitness, 'weights', 'strength', 'agirlik', 'ağırlık'],
+  'weight-lifter': [...GROUP_KEYWORDS.fitness, 'weights', 'strength', 'halter'],
+  'arm-flex': [...GROUP_KEYWORDS.fitness, 'muscle', 'strength', 'kas'],
+  yoga: [...GROUP_KEYWORDS.fitness, 'stretch', 'balance', 'yoga'],
+  meditation: [...GROUP_KEYWORDS.fitness, 'mindful', 'calm', 'breath', 'meditasyon'],
+  target: [...GROUP_KEYWORDS.fitness, 'goal', 'focus', 'hedef'],
+  'target-variant': [...GROUP_KEYWORDS.fitness, 'goal', 'focus', 'hedef'],
+  'bullseye-arrow': [...GROUP_KEYWORDS.fitness, 'goal', 'focus', 'hedef'],
+  hiking: [...GROUP_KEYWORDS.cardio, 'trail', 'dag yuruyusu', 'dağ yürüyüşü'],
+  rowing: [...GROUP_KEYWORDS.cardio, 'boat', 'kurek', 'kürek'],
+  surfing: [...GROUP_KEYWORDS.cardio, 'wave', 'sorf'],
+  snowboard: [...GROUP_KEYWORDS.cardio, 'snow', 'kar'],
+  skateboarding: [...GROUP_KEYWORDS.cardio, 'skate', 'kaykay'],
+  'jump-rope': [...GROUP_KEYWORDS.cardio, 'rope', 'ip atlama'],
+  trophy: ['award', 'win', 'champion', 'odul', 'ödül', 'kupa'],
+  medal: ['award', 'win', 'champion', 'madalya'],
+  'trophy-outline': ['award', 'win', 'champion', 'odul', 'ödül', 'kupa'],
+  'heart-pulse': ['health', 'pulse', 'wellness', 'saglik', 'sağlık', 'kalp'],
+  pulse: ['health', 'pulse', 'wellness', 'nabiz', 'nabız'],
+};
+
+const FEATURED_ACTIVITY_ICONS = [
+  'run', 'walk', 'bike', 'swim', 'dumbbell', 'yoga',
+  'meditation', 'basketball', 'soccer', 'football', 'tennis', 'golf',
+  'boxing-glove', 'badminton', 'volleyball', 'baseball', 'target', 'trophy',
+  'medal', 'heart-pulse', 'timer-outline', 'pulse', 'hiking', 'rowing',
+  'skateboarding', 'snowboard', 'surfing', 'weight-lifter', 'arm-flex', 'jump-rope',
+] as const;
+
+const ALL_MATERIAL_ICON_NAMES = Object.keys(MaterialCommunityIcons.glyphMap);
+
+const ICONS_ACTIVITY: IconOption[] = ALL_MATERIAL_ICON_NAMES.map((value) => ({
+  value,
+  search: Array.from(
+    new Set([
+      value,
+      value.replace(/-/g, ' '),
+      ...value.split('-'),
+      ...getAutoTranslatedTerms(value),
+      ...(ICON_KEYWORD_ALIASES[value] ?? []),
+    ])
+  ),
+}));
+
+const FEATURED_ACTIVITY_OPTIONS: IconOption[] = FEATURED_ACTIVITY_ICONS
+  .map((value) => ICONS_ACTIVITY.find((item) => item.value === value))
+  .filter((item): item is IconOption => Boolean(item));
+const FEATURED_ACTIVITY_SET = new Set<string>(FEATURED_ACTIVITY_ICONS);
 
 // ── Renk listesi (Figma paleti) ────────────────────────
 const COLORS = [
@@ -243,12 +571,105 @@ function IconPickerSheet({ visible, selectedIcon, onSelect, onCancel }: {
   const colors = useAppColors();
   const styles = useThemedStyles();
   const { t } = useLanguage();
-  const [tab, setTab] = useState<'activity' | 'lifestyle'>('activity');
-  const list = tab === 'activity' ? ICONS_ACTIVITY : ICONS_LIFESTYLE;
+  const [query, setQuery] = useState('');
+  const filteredList = useMemo(() => {
+    const normalizedQuery = normalizeSearchValue(query.trim());
+    const tokens = getSearchTokens(query);
+
+    if (!normalizedQuery) {
+      return FEATURED_ACTIVITY_OPTIONS;
+    }
+
+    const maxResults = normalizedQuery.length === 1 ? 36 : normalizedQuery.length === 2 ? 60 : 90;
+
+    return ICONS_ACTIVITY
+      .map((item) => {
+        let score = FEATURED_ACTIVITY_SET.has(item.value) ? 100 : 0;
+        const normalizedTerms = item.search.map((rawTerm) => normalizeSearchValue(rawTerm));
+
+        const matchesAllTokens = tokens.every((token) =>
+          normalizedTerms.some((term) => {
+            if (token.length === 1) {
+              return term.startsWith(token) || term.split(' ').some((part) => part.startsWith(token));
+            }
+
+            return term.includes(token) || term.split(' ').some((part) => part.startsWith(token));
+          })
+        );
+
+        if (!matchesAllTokens) {
+          return null;
+        }
+
+        for (const term of normalizedTerms) {
+          const words = term.split(' ');
+
+          if (term === normalizedQuery) {
+            score = Math.max(score, 1000);
+            continue;
+          }
+
+          if (term.startsWith(normalizedQuery)) {
+            score = Math.max(score, 820);
+            continue;
+          }
+
+          if (words.some((word) => word.startsWith(normalizedQuery))) {
+            score = Math.max(score, 720);
+            continue;
+          }
+
+          if (normalizedQuery.length >= 2 && term.includes(normalizedQuery)) {
+            score = Math.max(score, 520);
+          }
+        }
+
+        return score > 0 ? { item, score } : null;
+      })
+      .filter((entry): entry is { item: IconOption; score: number } => Boolean(entry))
+      .sort((left, right) => {
+        if (right.score !== left.score) {
+          return right.score - left.score;
+        }
+
+        if (FEATURED_ACTIVITY_SET.has(left.item.value) !== FEATURED_ACTIVITY_SET.has(right.item.value)) {
+          return FEATURED_ACTIVITY_SET.has(right.item.value) ? 1 : -1;
+        }
+
+        return left.item.value.localeCompare(right.item.value);
+      })
+      .slice(0, maxResults)
+      .map((entry) => entry.item);
+  }, [query]);
+  const gridData = useMemo<IconGridItem[]>(() => {
+    if (filteredList.length === 0) {
+      return [];
+    }
+
+    const items: IconGridItem[] = filteredList.map((option) => ({ type: 'icon', option }));
+    const remainder = items.length % ICON_GRID_COLUMNS;
+
+    if (remainder === 0) {
+      return items;
+    }
+
+    const missingCount = ICON_GRID_COLUMNS - remainder;
+    for (let index = 0; index < missingCount; index += 1) {
+      items.push({ type: 'placeholder', key: `placeholder-${index}` });
+    }
+
+    return items;
+  }, [filteredList]);
+
+  useEffect(() => {
+    if (!visible) {
+      setQuery('');
+    }
+  }, [visible]);
 
   return (
     <BottomSheet visible={visible} onClose={onCancel} maxHeight={SCREEN_H * 0.65}>
-      <View style={{ paddingBottom: 32 }}>
+      <View style={styles.iconSheetBody}>
         <View style={styles.iconSheetHeader}>
           <Text style={styles.sheetTitle}>{t('create.selectIcon')}</Text>
           <TouchableOpacity
@@ -260,33 +681,60 @@ function IconPickerSheet({ visible, selectedIcon, onSelect, onCancel }: {
           </TouchableOpacity>
         </View>
 
-        <View style={{ paddingHorizontal: 20, marginBottom: 12 }}>
-          <PillTabs
-            tabs={[{ key: 'activity', label: t('create.activity') }, { key: 'lifestyle', label: t('create.lifestyle') }]}
-            activeKey={tab}
-            onChange={(k) => setTab(k as 'activity' | 'lifestyle')}
+        <View style={styles.iconSearchWrap}>
+          <MaterialCommunityIcons name="magnify" size={18} color={colors.muted} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder={t('create.searchIcons')}
+            placeholderTextColor={colors.muted}
+            style={styles.iconSearchInput}
+            autoCorrect={false}
+            autoCapitalize="none"
+            returnKeyType="search"
           />
+          {query ? (
+            <TouchableOpacity
+              onPress={() => setQuery('')}
+              style={styles.iconSearchClear}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons name="close-circle" size={18} color={colors.muted} />
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         <FlatList
-          data={list}
-          keyExtractor={(item) => item}
-          numColumns={8}
-          contentContainerStyle={{ paddingHorizontal: 16 }}
+          data={gridData}
+          keyExtractor={(item) => item.type === 'icon' ? item.option.value : item.key}
+          numColumns={ICON_GRID_COLUMNS}
+          contentContainerStyle={styles.iconGridContent}
+          columnWrapperStyle={styles.iconGridRow}
+          ListEmptyComponent={(
+            <View style={styles.iconEmptyWrap}>
+              <Text style={styles.iconEmptyText}>{t('create.noIconsFound')}</Text>
+            </View>
+          )}
           renderItem={({ item }) => {
-            const isSelected = selectedIcon === item;
+            if (item.type === 'placeholder') {
+              return <View style={styles.iconCellPlaceholder} />;
+            }
+
+            const isSelected = selectedIcon === item.option.value;
             return (
               <TouchableOpacity
-                onPress={() => onSelect(item)}
+                onPress={() => onSelect(item.option.value)}
                 activeOpacity={0.7}
                 style={[
                   styles.iconCell,
-                  { backgroundColor: isSelected ? colors.orange : colors.tabBg },
+                  isSelected
+                    ? styles.iconCellSelected
+                    : { backgroundColor: colors.tabBg, borderColor: 'transparent' },
                 ]}
               >
                 <View style={styles.iconGlyphWrap}>
-                  <MaterialCommunityIcons
-                    name={item}
+                  <HabitIcon
+                    icon={item.option.value}
                     size={ICON_PICKER_GLYPH_SIZE}
                     color={isSelected ? colors.white : colors.text}
                     style={styles.iconGlyph}
@@ -633,7 +1081,7 @@ export default function CreateScreen() {
           <HabitCard
             habit={{
               id: 'preview',
-              name: taskName || t('create.habitNamePlaceholder'),
+              name: taskName || t('create.preview'),
               completed: false,
               bgColor: lightenColor(selectedColor),
               icon: selectedIcon,
@@ -668,10 +1116,10 @@ export default function CreateScreen() {
             activeOpacity={0.7}
           >
             <View style={styles.rowIconWrap}>
-              <MaterialCommunityIcons name="emoticon-outline" size={18} color={colors.orange} />
+              <MaterialCommunityIcons name="run" size={18} color={colors.orange} />
             </View>
             <Text style={styles.appearanceLabel}>{t('create.icon')}</Text>
-            <MaterialCommunityIcons name={selectedIcon} size={22} color={colors.text} />
+            <HabitIcon icon={selectedIcon} size={22} color={colors.text} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -1091,24 +1539,89 @@ function createStyles(colors: AppColors, isDark: boolean) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    iconCell: {
+    iconSheetBody: {
+      height: SCREEN_H * 0.65,
+      paddingBottom: 32,
+    },
+    iconSearchWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      marginHorizontal: 20,
+      marginBottom: 14,
+      paddingHorizontal: 14,
+      height: 48,
+      borderRadius: 16,
+      backgroundColor: colors.surfaceAlt,
+      borderWidth: 1,
+      borderColor: isDark ? colors.border : colors.orangeBg,
+    },
+    iconSearchInput: {
       flex: 1,
-      aspectRatio: 1,
-      margin: 3,
-      borderRadius: 12,
+      fontSize: 14,
+      color: colors.text,
+      paddingVertical: 0,
+    },
+    iconSearchClear: {
+      width: 24,
+      height: 24,
       alignItems: 'center',
       justifyContent: 'center',
     },
+    iconGridContent: {
+      paddingHorizontal: 16,
+      paddingBottom: 8,
+      gap: 8,
+    },
+    iconGridRow: {
+      gap: 8,
+    },
+    iconCell: {
+      flex: 1,
+      height: 56,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+    },
+    iconCellPlaceholder: {
+      flex: 1,
+      height: 56,
+      borderRadius: 14,
+      opacity: 0,
+    },
+    iconCellSelected: {
+      backgroundColor: colors.orange,
+      borderColor: colors.orangeDark,
+      ...Platform.select({
+        ios: {
+          shadowColor: colors.orange,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: isDark ? 0.24 : 0.18,
+          shadowRadius: 8,
+        },
+        android: { elevation: 2 },
+      }),
+    },
+    iconEmptyWrap: {
+      paddingTop: 28,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    iconEmptyText: {
+      fontSize: 13,
+      color: colors.muted,
+    },
     iconGlyphWrap: {
-      width: ICON_PICKER_GLYPH_SIZE,
-      height: ICON_PICKER_GLYPH_SIZE,
+      width: 28,
+      height: 28,
       alignItems: 'center',
       justifyContent: 'center',
     },
     iconGlyph: {
-      width: ICON_PICKER_GLYPH_SIZE,
-      height: ICON_PICKER_GLYPH_SIZE,
-      lineHeight: ICON_PICKER_GLYPH_SIZE,
+      width: 28,
+      height: 28,
+      lineHeight: 28,
       textAlign: 'center',
       includeFontPadding: false,
     },

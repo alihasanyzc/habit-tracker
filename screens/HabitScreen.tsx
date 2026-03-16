@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import ScreenHeader from '../components/ScreenHeader';
+import HabitIcon from '../components/HabitIcon';
 import { getThemedAccentSurface, useAppColors, useIsDark, type AppColors } from '../constants/colors';
 import { deleteHabit, getHabitData } from '../utils/habitRepository';
 import { getHabitStreak } from '../utils/habitMetrics';
@@ -117,7 +118,7 @@ function HabitDetailCard({
         onResponderRelease={onTouchEnd}
       >
         <View style={styles.emojiBox}>
-          <MaterialCommunityIcons name={habit.icon as any} size={22} color={habit.iconColor} />
+          <HabitIcon icon={habit.icon} size={22} color={habit.iconColor} />
         </View>
         <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
         <View style={styles.rightBlock}>

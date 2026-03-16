@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getThemedAccentSurface, useAppColors, useIsDark } from '../constants/colors';
+import HabitIcon from './HabitIcon';
 
 interface IconBoxProps {
   icon: string;
@@ -42,7 +42,7 @@ export default function IconBox({
         },
       ]}
     >
-      <MaterialCommunityIcons name={icon as any} size={iconSize} color={iconColor} />
+      <HabitIcon icon={icon} size={iconSize} color={iconColor} />
     </View>
   );
 }
