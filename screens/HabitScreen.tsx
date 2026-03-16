@@ -217,13 +217,17 @@ export default function HabitScreen() {
             activeOpacity={0.75}
             style={[
               styles.filterPill,
-              filter === f.key && { backgroundColor: colors.orange },
+              filter === f.key && styles.filterPillActive,
             ]}
           >
             <Text style={[
               styles.filterText,
-              filter === f.key && { color: colors.white, fontWeight: '700' },
-            ]}>
+              filter === f.key && styles.filterTextActive,
+            ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
               {f.label}
             </Text>
           </TouchableOpacity>
@@ -273,20 +277,43 @@ function createStyles(colors: AppColors, isDark: boolean) {
     },
     filterRow: {
       flexDirection: 'row',
-      gap: 8,
-      paddingHorizontal: 20,
-      paddingBottom: 12,
+      gap: 6,
+      paddingVertical: 4,
+      paddingHorizontal: 4,
+      marginHorizontal: 20,
+      marginBottom: 12,
+      borderRadius: 22,
+      backgroundColor: colors.tabBg,
     },
     filterPill: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
       paddingHorizontal: 14,
-      paddingVertical: 7,
-      borderRadius: 20,
-      backgroundColor: colors.surfaceAlt,
+      paddingVertical: 10,
+      borderRadius: 18,
+    },
+    filterPillActive: {
+      backgroundColor: colors.orange,
+      ...Platform.select({
+        ios: {
+          shadowColor: colors.orange,
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: isDark ? 0.28 : 0.2,
+          shadowRadius: 10,
+        },
+        android: { elevation: 2 },
+      }),
     },
     filterText: {
       fontSize: 12,
-      fontWeight: '500',
+      fontWeight: '400',
       color: colors.muted,
+      textAlign: 'center',
+    },
+    filterTextActive: {
+      color: colors.white,
+      fontWeight: '400',
     },
 
     swipeHint: {
