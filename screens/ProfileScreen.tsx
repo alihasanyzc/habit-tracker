@@ -197,8 +197,8 @@ export default function ProfileScreen() {
           <View style={styles.listCard}>
             {editingSection === 'security' ? (
               <>
-                <View style={[styles.row, styles.rowBorder]}>
-                  <View style={styles.rowIcon}>
+                <View style={[styles.row, styles.rowEditing, styles.rowBorder]}>
+                  <View style={[styles.rowIcon, styles.rowIconEditing]}>
                     <Feather name="lock" size={16} color={colors.orange} />
                   </View>
                   <View style={styles.rowCopy}>
@@ -213,8 +213,8 @@ export default function ProfileScreen() {
                     />
                   </View>
                 </View>
-                <View style={styles.row}>
-                  <View style={styles.rowIcon}>
+                <View style={[styles.row, styles.rowEditing]}>
+                  <View style={[styles.rowIcon, styles.rowIconEditing]}>
                     <Feather name="key" size={16} color={colors.orange} />
                   </View>
                   <View style={styles.rowCopy}>
