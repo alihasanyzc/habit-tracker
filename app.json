@@ -26,6 +26,9 @@
     },
     "plugins": [
       "expo-localization"
-    ]
+    ],
+    "android": {
+      "package": "com.habition"
+    }
   }
 }
