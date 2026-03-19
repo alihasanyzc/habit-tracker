@@ -1,14 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   Animated,
-  Image,
   ImageBackground,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,8 +15,6 @@ interface AuthScreenProps {
   onDone: () => void;
 }
 
-type AuthMode = 'login' | 'signup';
-
 const backgroundImage = require('../assets/background.png');
 const lightImage = require('../assets/light.png');
 
@@ -28,10 +22,6 @@ export default function AuthScreen({ onDone }: AuthScreenProps) {
   const colors = useAppColors();
   const isDark = useIsDark();
   const { language } = useLanguage();
-  const [mode, setMode] = useState<AuthMode>('login');
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
 
   const leftDrop = useRef(new Animated.Value(-280)).current;
   const rightDrop = useRef(new Animated.Value(-320)).current;
@@ -63,110 +53,60 @@ export default function AuthScreen({ onDone }: AuthScreenProps) {
     ]).start();
   }, [leftDrop, leftOpacity, rightDrop, rightOpacity]);
 
-  const isLogin = mode === 'login';
   const isTurkish = language === 'tr';
-  const submitLabel = isLogin
-    ? (isTurkish ? 'Giris Yap' : 'Login')
-    : (isTurkish ? 'Kayit Ol' : 'Create Account');
-  const subtitle = isLogin
-    ? (isTurkish ? 'Hesabin yok mu?' : "Don't have an account?")
-    : (isTurkish ? 'Zaten hesabin var mi?' : 'Already have an account?');
-  const actionLabel = isLogin
-    ? (isTurkish ? 'Kayit Ol' : 'SignUp')
-    : (isTurkish ? 'Giris Yap' : 'Login');
-  const handleModeToggle = () => {
-    setMode((currentMode) => currentMode === 'login' ? 'signup' : 'login');
-  };
-
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   return (
     <ImageBackground source={backgroundImage} style={styles.background} resizeMode="cover">
       <SafeAreaView style={styles.safe}>
-        <KeyboardAvoidingView
-          style={styles.keyboard}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-          <View style={styles.hero}>
-            <Animated.Image
-              source={lightImage}
-              style={[
-                styles.light,
-                styles.lightRight,
-                {
-                  opacity: rightOpacity,
-                  transform: [{ translateY: rightDrop }, { scale: 0.72 }],
-                },
-              ]}
-              resizeMode="contain"
-            />
+        <View style={styles.hero}>
+          <Animated.Image
+            source={lightImage}
+            style={[
+              styles.light,
+              styles.lightRight,
+              {
+                opacity: rightOpacity,
+                transform: [{ translateY: rightDrop }, { scale: 0.72 }],
+              },
+            ]}
+            resizeMode="contain"
+          />
 
-            <Animated.Image
-              source={lightImage}
-              style={[
-                styles.light,
-                styles.lightLeft,
-                {
-                  opacity: leftOpacity,
-                  transform: [{ translateY: leftDrop }],
-                },
-              ]}
-              resizeMode="contain"
-            />
+          <Animated.Image
+            source={lightImage}
+            style={[
+              styles.light,
+              styles.lightLeft,
+              {
+                opacity: leftOpacity,
+                transform: [{ translateY: leftDrop }],
+              },
+            ]}
+            resizeMode="contain"
+          />
+        </View>
 
+        <View style={styles.sheet}>
+          <View style={styles.waveCap} />
+
+          <View style={styles.content}>
+            <Text style={styles.welcomeTitle}>
+              {isTurkish ? 'Habition' : 'Habition'}
+            </Text>
+            <Text style={styles.welcomeSubtitle}>
+              {isTurkish
+                ? 'Alışkanlıklarını takip et,\nher gün daha iyi ol.'
+                : 'Track your habits,\nget better every day.'}
+            </Text>
+
+            <Pressable style={styles.primaryButton} onPress={onDone}>
+              <Text style={styles.primaryButtonText}>
+                {isTurkish ? 'Başla' : 'Get Started'}
+              </Text>
+            </Pressable>
           </View>
-
-          <View style={styles.sheet}>
-            <View style={styles.waveCap} />
-
-            <View key={mode} style={styles.form}>
-              {!isLogin ? (
-                <TextInput
-                  value={username}
-                  onChangeText={setUsername}
-                  placeholder={isTurkish ? 'Kullanici Adi' : 'Username'}
-                  placeholderTextColor={isDark ? colors.dayMuted : '#9DA6B4'}
-                  style={styles.input}
-                />
-              ) : null}
-
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                placeholder={isTurkish ? 'E-posta' : 'Email'}
-                placeholderTextColor={isDark ? colors.dayMuted : '#9DA6B4'}
-                style={styles.input}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-
-              <TextInput
-                value={password}
-                onChangeText={setPassword}
-                placeholder={isTurkish ? 'Sifre' : 'Password'}
-                placeholderTextColor={isDark ? colors.dayMuted : '#9DA6B4'}
-                style={styles.input}
-                secureTextEntry
-              />
-
-              <Pressable style={styles.primaryButton} onPress={onDone}>
-                <Text style={styles.primaryButtonText}>{submitLabel}</Text>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [
-                  styles.switchRow,
-                  pressed && styles.switchRowPressed,
-                ]}
-                onPress={handleModeToggle}
-                hitSlop={12}
-              >
-                <Text style={styles.switchText}>{subtitle} </Text>
-                <Text style={styles.switchAction}>{actionLabel}</Text>
-              </Pressable>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
+        </View>
       </SafeAreaView>
     </ImageBackground>
   );
@@ -179,9 +119,6 @@ function createStyles(colors: ReturnType<typeof useAppColors>, isDark: boolean) 
       backgroundColor: colors.orange,
     },
     safe: {
-      flex: 1,
-    },
-    keyboard: {
       flex: 1,
     },
     hero: {
@@ -204,9 +141,6 @@ function createStyles(colors: ReturnType<typeof useAppColors>, isDark: boolean) 
       top: -52,
       right: 82,
     },
-    title: {
-      display: 'none',
-    },
     sheet: {
       flex: 0.56,
       backgroundColor: colors.surface,
@@ -226,56 +160,38 @@ function createStyles(colors: ReturnType<typeof useAppColors>, isDark: boolean) 
       borderBottomRightRadius: 170,
       transform: [{ rotate: '-3deg' }],
     },
-    form: {
+    content: {
       flex: 1,
       paddingHorizontal: 24,
       paddingTop: 68,
       paddingBottom: 28,
       gap: 16,
+      alignItems: 'center',
     },
-    input: {
-      height: 54,
-      borderRadius: 14,
-      backgroundColor: isDark ? colors.surfaceAlt : '#F2F3F6',
-      paddingHorizontal: 16,
+    welcomeTitle: {
+      fontSize: 28,
+      fontWeight: '800',
       color: colors.text,
-      fontSize: 14,
-      borderWidth: 1,
-      borderColor: isDark ? colors.border : '#EBEEF2',
+      textAlign: 'center',
+    },
+    welcomeSubtitle: {
+      fontSize: 15,
+      color: colors.muted,
+      textAlign: 'center',
+      lineHeight: 22,
     },
     primaryButton: {
-      marginTop: 8,
+      marginTop: 24,
       height: 54,
       borderRadius: 14,
       backgroundColor: colors.orange,
       alignItems: 'center',
       justifyContent: 'center',
+      alignSelf: 'stretch',
     },
     primaryButtonText: {
       color: colors.white,
       fontSize: 15,
-      fontWeight: '700',
-    },
-    switchRow: {
-      marginTop: 8,
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
-      flexWrap: 'wrap',
-      alignSelf: 'center',
-      paddingHorizontal: 10,
-      paddingVertical: 8,
-    },
-    switchRowPressed: {
-      opacity: 0.82,
-    },
-    switchText: {
-      color: colors.muted,
-      fontSize: 13,
-    },
-    switchAction: {
-      color: colors.orangeDark,
-      fontSize: 13,
       fontWeight: '700',
     },
   });

@@ -6,15 +6,11 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import MaskInput from 'react-native-mask-input';
+import { Feather } from '@expo/vector-icons';
 import ScreenHeader from '../components/ScreenHeader';
 import ProfileThemeCard from '../components/ProfileThemeCard';
-import PlusScreen from './PlusScreen';
 import {
   useAppColors,
   useIsDark,
@@ -27,14 +23,11 @@ const LANG_OPTIONS: Array<{ value: AppLanguage; label: string }> = [
   { value: 'en', label: 'English' },
 ];
 
-const PHONE_MASK = ['(', /\d/, /\d/, /\d/, ')', ' ', /\d/, /\d/, /\d/, ' ', /\d/, /\d/, ' ', /\d/, /\d/];
-
 export default function ProfileScreen() {
   const colors = useAppColors();
   const isDark = useIsDark();
   const { t, language, setLanguage } = useLanguage();
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
-  const [plusVisible, setPlusVisible] = useState(false);
   const [editingSection, setEditingSection] = useState<'profile' | 'security' | null>(null);
 
   const PROFILE_FIELDS = useMemo(() => [
@@ -68,40 +61,6 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
       >
-        <TouchableOpacity
-          style={styles.plusCard}
-          activeOpacity={0.85}
-          onPress={() => setPlusVisible(true)}
-        >
-          <LinearGradient
-            colors={isDark
-              ? ['#3A2200', '#2A1800']
-              : ['#FFF4EA', '#FFE8D0']
-            }
-            style={styles.plusGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.plusIconWrap}>
-              <MaterialCommunityIcons name="crown" size={22} color={colors.orange} />
-            </View>
-            <View style={styles.plusCopy}>
-              <Text style={styles.plusTitle}>{t('plus.upgradeTitle')}</Text>
-              <Text style={styles.plusDesc}>{t('plus.upgradeDesc')}</Text>
-            </View>
-            <Feather name="chevron-right" size={20} color={colors.orange} />
-          </LinearGradient>
-        </TouchableOpacity>
-
-        <Modal
-          visible={plusVisible}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setPlusVisible(false)}
-        >
-          <PlusScreen onClose={() => setPlusVisible(false)} />
-        </Modal>
-
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t('profile.basicInfo')}</Text>
@@ -133,27 +92,15 @@ export default function ProfileScreen() {
                 <View style={styles.rowCopy}>
                   <Text style={styles.rowLabel}>{field.label}</Text>
                   {editingSection === 'profile' ? (
-                    field.key === 'phone' ? (
-                      <MaskInput
-                        value={form.phone}
-                        onChangeText={(masked) => updateField('phone', masked)}
-                        placeholder={field.placeholder}
-                        placeholderTextColor={colors.muted}
-                        keyboardType="phone-pad"
-                        mask={PHONE_MASK}
-                        style={styles.input}
-                      />
-                    ) : (
-                      <TextInput
-                        value={form[field.key]}
-                        onChangeText={(v) => updateField(field.key, v)}
-                        placeholder={field.placeholder}
-                        placeholderTextColor={colors.muted}
-                        keyboardType={field.keyboard}
-                        autoCapitalize={field.key === 'email' ? 'none' : 'words'}
-                        style={styles.input}
-                      />
-                    )
+                    <TextInput
+                      value={form[field.key]}
+                      onChangeText={(v) => updateField(field.key, v)}
+                      placeholder={field.placeholder}
+                      placeholderTextColor={colors.muted}
+                      keyboardType={field.keyboard}
+                      autoCapitalize={field.key === 'email' ? 'none' : 'words'}
+                      style={styles.input}
+                    />
                   ) : (
                     <Text style={[styles.rowValue, form[field.key] && styles.rowValueFilled]}>
                       {form[field.key] || t('profile.notAdded')}
@@ -364,40 +311,6 @@ function createStyles(colors: AppColors, isDark: boolean) {
     },
     rowValueFilled: {
       color: colors.text,
-    },
-    plusCard: {
-      borderRadius: 24,
-      overflow: 'hidden',
-    },
-    plusGradient: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: 16,
-      borderRadius: 24,
-      borderWidth: 1,
-      borderColor: isDark ? colors.border : 'rgba(255,138,31,0.2)',
-    },
-    plusIconWrap: {
-      width: 44,
-      height: 44,
-      borderRadius: 14,
-      backgroundColor: isDark ? 'rgba(255,138,31,0.15)' : 'rgba(255,138,31,0.12)',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 12,
-    },
-    plusCopy: {
-      flex: 1,
-    },
-    plusTitle: {
-      fontSize: 15,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    plusDesc: {
-      marginTop: 2,
-      fontSize: 12,
-      color: colors.muted,
     },
     input: {
       marginTop: 4,

@@ -228,7 +228,7 @@ export default function HabitScreen() {
       >
         {filtered.length === 0 ? (
           <View style={styles.emptyWrap}>
-            <Text style={styles.emptyText}>Alışkanlık bulunamadı</Text>
+            <Text style={styles.emptyText}>{t('habit.noHabitsFound')}</Text>
           </View>
         ) : (
           filtered.map(h => (

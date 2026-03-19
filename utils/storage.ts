@@ -1,8 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { LocalHabitData, UserPlan } from '../types/habit';
+import type { LocalHabitData } from '../types/habit';
 
 const STORAGE_KEYS = {
-  plan: 'user_plan',
   habits: 'local_habit_data',
   themePreference: 'app_theme_preference',
   languagePreference: 'app_language_preference',
@@ -10,7 +9,6 @@ const STORAGE_KEYS = {
 } as const;
 const ONBOARDING_VERSION = 'v3';
 
-const DEFAULT_PLAN: UserPlan = 'guest';
 const DEFAULT_THEME_PREFERENCE: ThemePreference = 'system';
 const memoryStorage = new Map<string, string>();
 let useMemoryStorage = false;
@@ -99,20 +97,6 @@ function createEmptyHabitData(): LocalHabitData {
   };
 }
 
-export async function getPlan(): Promise<UserPlan> {
-  const storedPlan = await getStoredItem(STORAGE_KEYS.plan);
-
-  if (storedPlan === 'guest' || storedPlan === 'free' || storedPlan === 'plus') {
-    return storedPlan;
-  }
-
-  return DEFAULT_PLAN;
-}
-
-export async function setPlan(plan: UserPlan) {
-  await setStoredItem(STORAGE_KEYS.plan, plan);
-}
-
 export async function getThemePreference(): Promise<ThemePreference> {
   const storedPreference = await getStoredItem(STORAGE_KEYS.themePreference);
 
@@ -161,6 +145,23 @@ export async function saveLocalHabitData(data: LocalHabitData) {
 
 export async function clearLocalHabitData() {
   await removeStoredItem(STORAGE_KEYS.habits);
+}
+
+export async function removeHabitDataByIdPrefix(prefix: string) {
+  const data = await getLocalHabitData();
+  const habits = data.habits.filter((habit) => !habit.id.startsWith(prefix));
+  const habitIds = new Set(habits.map((habit) => habit.id));
+  const entries = data.entries.filter((entry) => habitIds.has(entry.habitId));
+
+  if (habits.length === data.habits.length && entries.length === data.entries.length) {
+    return;
+  }
+
+  await saveLocalHabitData({
+    ...data,
+    habits,
+    entries,
+  });
 }
 
 export async function getLanguagePreference(): Promise<string | null> {

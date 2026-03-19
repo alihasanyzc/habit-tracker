@@ -11,7 +11,7 @@ React Native / Expo ile geliştirilen alışkanlık takip uygulaması. Tasarım 
 | **Home** | Haftalık takvim + swipeable alışkanlık kartları |
 | **Stats** | Haftalık / Aylık / Yıllık görünüm, GitHub heatmap |
 | **Create** | Yeni alışkanlık oluşturma, ikon & renk seçici, takvim |
-| **Report** | Bar chart + Area chart (SVG tabanlı) |
+| **Habit** | Tüm alışkanlıklar listesi, filtre ve yönetim |
 | **Profile** | Gradient header, düzenlenebilir isim, ayarlar menüsü |
 
 ---
@@ -60,7 +60,6 @@ habition/
 │   ├── HomeScreen.tsx         # Ana sayfa
 │   ├── StatsScreen.tsx        # İstatistikler
 │   ├── CreateScreen.tsx       # Alışkanlık oluştur
-│   ├── ReportScreen.tsx       # Rapor / Grafikler
 │   └── ProfileScreen.tsx      # Profil
 └── package.json
 ```

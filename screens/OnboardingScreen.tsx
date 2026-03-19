@@ -10,7 +10,7 @@ interface OnboardingScreenProps {
 
 const BOARDS = [
   require('../assets/board1.png'),
-  require('../assets/boardd2.png'),
+  require('../assets/board2.png'),
   require('../assets/board3.png'),
 ] as const;
 

@@ -12,7 +12,7 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.habition",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

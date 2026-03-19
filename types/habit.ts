@@ -1,5 +1,3 @@
-export type UserPlan = 'guest' | 'free' | 'plus';
-
 export interface Habit {
   id: string;
   name: string;
