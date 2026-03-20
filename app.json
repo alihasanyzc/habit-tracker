@@ -6,11 +6,7 @@
     "orientation": "portrait",
     "icon": "./logo.png",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./logo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
+    "backgroundColor": "#F6EFEA",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.habition",
@@ -25,7 +21,13 @@
       }
     },
     "plugins": [
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F6EFEA"
+        }
+      ]
     ]
   }
 }

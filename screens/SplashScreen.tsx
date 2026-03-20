@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Image, Animated, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Image, Text, StyleSheet } from 'react-native';
+import * as NativeSplash from 'expo-splash-screen';
 import { useAppColors } from '../constants/colors';
 
 interface SplashScreenProps {
@@ -8,38 +9,26 @@ interface SplashScreenProps {
 
 export default function SplashScreen({ onFinish }: SplashScreenProps) {
   const colors = useAppColors();
-  const opacity = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(0.8)).current;
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scale, {
-        toValue: 1,
-        friction: 6,
-        tension: 80,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setTimeout(() => {
-        Animated.timing(opacity, {
-          toValue: 0,
-          duration: 400,
-          useNativeDriver: true,
-        }).start(() => onFinish());
-      }, 1200);
-    });
-  }, []);
+    if (imageLoaded) {
+      NativeSplash.hideAsync();
+      const timer = setTimeout(() => onFinish(), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [imageLoaded]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
-      <Animated.View style={{ opacity, transform: [{ scale }] }}>
-        <Image source={require('../logo.png')} style={styles.logo} />
-      </Animated.View>
+      <Image
+        source={require('../assets/logo.png')}
+        style={styles.logo}
+        onLoad={() => setImageLoaded(true)}
+      />
+      {imageLoaded && (
+        <Text style={[styles.appName, { color: colors.text }]}>Habition</Text>
+      )}
     </View>
   );
 }
@@ -51,8 +40,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: 120,
-    height: 120,
-    borderRadius: 28,
+    width: 140,
+    height: 140,
+    borderRadius: 24,
+  },
+  appName: {
+    marginTop: 20,
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: 1.5,
   },
 });
