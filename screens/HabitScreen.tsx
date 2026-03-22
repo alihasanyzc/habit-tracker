@@ -114,6 +114,7 @@ function HabitDetailCard({
         style={[styles.card, { backgroundColor: surface, transform: [{ translateX }] }]}
         onStartShouldSetResponder={() => true}
         onMoveShouldSetResponder={() => true}
+        onResponderTerminationRequest={() => false}
         onResponderStart={onTouchStart}
         onResponderMove={onTouchMove}
         onResponderRelease={onTouchEnd}

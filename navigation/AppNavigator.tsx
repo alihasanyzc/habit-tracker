@@ -1,12 +1,11 @@
-import React, { useMemo, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform, PanResponder } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import {
   createNavigationContainerRef,
   DarkTheme,
   DefaultTheme,
   NavigationContainer,
-  useNavigation,
   type Theme,
 } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,43 +20,6 @@ import { useLanguage } from '../providers/LanguageProvider';
 
 const Tab = createBottomTabNavigator();
 const navigationRef = createNavigationContainerRef();
-
-const TAB_ROUTES = ['Home', 'Stats', 'Create', 'Habit', 'Profile'];
-
-function SwipeableScreen({ children }: { children: React.ReactNode }) {
-  const navigation = useNavigation<any>();
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gesture) => {
-        return Math.abs(gesture.dx) > 20 && Math.abs(gesture.dy) < 20;
-      },
-      onPanResponderRelease: (_, gesture) => {
-        const { dx, vx } = gesture;
-        if (Math.abs(dx) < 50 && Math.abs(vx) < 0.5) return;
-
-        const state = navigation.getState();
-        const currentIndex = state.index;
-
-        if (dx > 0 || vx > 0.5) {
-          if (currentIndex > 0) {
-            navigation.navigate(TAB_ROUTES[currentIndex - 1]);
-          }
-        } else if (dx < 0 || vx < -0.5) {
-          if (currentIndex < TAB_ROUTES.length - 1) {
-            navigation.navigate(TAB_ROUTES[currentIndex + 1]);
-          }
-        }
-      },
-    })
-  ).current;
-
-  return (
-    <View style={{ flex: 1 }} {...panResponder.panHandlers}>
-      {children}
-    </View>
-  );
-}
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -155,11 +117,11 @@ export default function AppNavigator() {
             sceneStyle: { backgroundColor: colors.bg },
           }}
         >
-          <Tab.Screen name="Home">{() => <SwipeableScreen><HomeScreen /></SwipeableScreen>}</Tab.Screen>
-          <Tab.Screen name="Stats">{() => <SwipeableScreen><StatsScreen /></SwipeableScreen>}</Tab.Screen>
-          <Tab.Screen name="Create">{() => <SwipeableScreen><CreateScreen /></SwipeableScreen>}</Tab.Screen>
-          <Tab.Screen name="Habit">{() => <SwipeableScreen><HabitScreen /></SwipeableScreen>}</Tab.Screen>
-          <Tab.Screen name="Profile">{() => <SwipeableScreen><ProfileScreen /></SwipeableScreen>}</Tab.Screen>
+          <Tab.Screen name="Home" component={HomeScreen} />
+          <Tab.Screen name="Stats" component={StatsScreen} />
+          <Tab.Screen name="Create" component={CreateScreen} />
+          <Tab.Screen name="Habit" component={HabitScreen} />
+          <Tab.Screen name="Profile" component={ProfileScreen} />
         </Tab.Navigator>
       </NavigationContainer>
     </View>

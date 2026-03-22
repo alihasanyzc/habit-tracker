@@ -3,6 +3,7 @@ import { useState } from 'react';
 import * as NativeSplash from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 NativeSplash.preventAutoHideAsync();
 import AppNavigator from './navigation/AppNavigator';
@@ -14,6 +15,7 @@ import { LanguageProvider } from './providers/LanguageProvider';
 
 export default function App() {
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaProvider>
       <LanguageProvider>
         <ThemeProvider>
@@ -23,6 +25,7 @@ export default function App() {
         </ThemeProvider>
       </LanguageProvider>
     </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

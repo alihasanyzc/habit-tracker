@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, Dimensions, FlatList, Platform, Switch,
+  TextInput, Dimensions, FlatList, Platform, Switch, PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -1059,7 +1060,19 @@ export default function CreateScreen() {
     }
   };
 
+  const swipeBackResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) => g.dx > 20 && Math.abs(g.dy) < 20,
+      onPanResponderRelease: (_, g) => {
+        if (g.dx > 80 && Math.abs(g.dy) < 80) {
+          navigateBack();
+        }
+      },
+    })
+  ).current;
+
   return (
+    <View style={{ flex: 1 }} {...swipeBackResponder.panHandlers}>
     <SafeAreaView style={styles.safe} edges={['top']}>
 
       {/* ── Başlık ──────────────────────────────────── */}
@@ -1206,6 +1219,7 @@ export default function CreateScreen() {
           </TouchableOpacity>
         </View>
 
+
       </ScrollView>
 
       {/* ── Modaller ──────────────────────────────────── */}
@@ -1234,6 +1248,7 @@ export default function CreateScreen() {
         onCancel={() => setShowColorPicker(false)}
       />
     </SafeAreaView>
+    </View>
   );
 }
 
