@@ -123,7 +123,7 @@ export default {
     introDesc: '',
     trackTitle: 'Track your habits\neffortlessly',
     trackDesc: 'Build daily routines, see your progress, and stay consistent.',
-    createTitle: 'Add your first habit\nright now',
+    createTitle: 'Add your first habit',
     createDesc: 'Create your personal plan in less than a minute',
   },
 };

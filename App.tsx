@@ -92,7 +92,7 @@ function AppContent() {
     <>
       <StatusBar
         style={isShowingOnboarding ? 'light' : isDark ? 'light' : 'dark'}
-        backgroundColor={isShowingOnboarding ? '#FF8A1F' : colors.bg}
+        backgroundColor={isShowingOnboarding ? '#FF7000' : colors.bg}
       />
       {onboardingDone ? (
         <AppNavigator />

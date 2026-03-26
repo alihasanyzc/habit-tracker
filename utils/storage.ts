@@ -180,3 +180,7 @@ export async function getOnboardingDone(): Promise<boolean> {
 export async function setOnboardingDone() {
   await setStoredItem(STORAGE_KEYS.onboardingDone, ONBOARDING_VERSION);
 }
+
+export async function clearOnboardingDone() {
+  await removeStoredItem(STORAGE_KEYS.onboardingDone);
+}

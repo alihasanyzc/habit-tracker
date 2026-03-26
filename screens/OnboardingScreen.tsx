@@ -87,7 +87,7 @@ export default function OnboardingScreen({ onDone }: OnboardingScreenProps) {
   return (
     <View style={styles.screen}>
       <LinearGradient
-        colors={['#FFAC49', '#FF8A1F', '#FF7A00']}
+        colors={['#FF9A3D', '#FF7000', '#E75C00']}
         locations={[0, 0.5, 1]}
         start={{ x: 0.12, y: 0 }}
         end={{ x: 0.9, y: 1 }}
@@ -114,7 +114,6 @@ export default function OnboardingScreen({ onDone }: OnboardingScreenProps) {
               ) : (
                 <>
                   <View style={styles.heroSection}>
-                    <View style={styles.heroShadow} />
                     <Image source={item.image} style={styles.heroImage} resizeMode="contain" />
                   </View>
 
@@ -162,7 +161,7 @@ export default function OnboardingScreen({ onDone }: OnboardingScreenProps) {
             <Feather
               name="chevron-right"
               size={22}
-              color={currentIndex === 0 ? '#FFFFFF' : '#8C89FF'}
+              color="#FF7000"
             />
           </Pressable>
         </View>
@@ -172,10 +171,12 @@ export default function OnboardingScreen({ onDone }: OnboardingScreenProps) {
 }
 
 function createStyles(width: number, height: number) {
+  const footerClearance = Math.max(96, Math.min(height * 0.12, 112));
+
   return StyleSheet.create({
     screen: {
       flex: 1,
-      backgroundColor: '#FF8A1F',
+      backgroundColor: '#FF7000',
     },
     safe: {
       flex: 1,
@@ -202,13 +203,13 @@ function createStyles(width: number, height: number) {
       flex: 1,
       paddingHorizontal: 26,
       paddingTop: 12,
-      paddingBottom: 120,
+      paddingBottom: footerClearance,
     },
     brandContent: {
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
-      paddingBottom: 84,
+      paddingBottom: 0,
     },
     brandTitle: {
       color: '#FFFFFF',
@@ -226,28 +227,20 @@ function createStyles(width: number, height: number) {
       textAlign: 'center',
     },
     heroSection: {
-      flex: 0.58,
+      flex: 0.55,
       alignItems: 'center',
       justifyContent: 'flex-end',
-      paddingBottom: 22,
-    },
-    heroShadow: {
-      position: 'absolute',
-      bottom: 14,
-      width: width * 0.44,
-      height: 28,
-      borderRadius: 999,
-      backgroundColor: 'rgba(111, 47, 0, 0.22)',
+      paddingBottom: 2,
     },
     heroImage: {
-      width: width * 0.82,
-      height: Math.min(height * 0.46, 430),
+      width: width * 0.8,
+      height: Math.min(height * 0.42, 390),
     },
     copySection: {
-      flex: 0.42,
+      flex: 0.45,
       alignItems: 'center',
       justifyContent: 'flex-start',
-      paddingTop: 18,
+      paddingTop: 10,
     },
     title: {
       color: '#FFFFFF',
@@ -259,7 +252,7 @@ function createStyles(width: number, height: number) {
     },
     description: {
       marginTop: 14,
-      maxWidth: width * 0.8,
+      maxWidth: width * 0.78,
       color: 'rgba(255,255,255,0.88)',
       fontSize: 15,
       lineHeight: 22,
@@ -303,7 +296,7 @@ function createStyles(width: number, height: number) {
       elevation: 8,
     },
     nextButtonDark: {
-      backgroundColor: '#A6550A',
+      backgroundColor: '#C95200',
     },
     nextButtonPressed: {
       transform: [{ scale: 0.97 }],

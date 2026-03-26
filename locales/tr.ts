@@ -123,7 +123,7 @@ export default {
     introDesc: '',
     trackTitle: 'Alışkanlıklarını\nkolayca takip et',
     trackDesc: 'Günlük rutinlerini oluştur, ilerlemeni gör, istikrar kazan',
-    createTitle: 'İlk alışkanlığını şimdi\nekle',
+    createTitle: 'İlk alışkanlığını\nekle',
     createDesc: '1 dakikadan kısa sürede kişisel planını oluştur',
   },
 };
