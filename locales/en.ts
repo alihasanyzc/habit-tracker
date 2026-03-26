@@ -119,11 +119,11 @@ export default {
     themeLabel: '%{option} theme',
   },
   onboarding: {
-    createTitle: 'Create your habits\neffortlessly',
-    createDesc: 'Add habits that fit your goals, pick your days, and build a routine that works for you.',
-    trackTitle: 'Track every day\nwith one tap',
-    trackDesc: 'Mark the habits you complete and stay consistent without losing your daily progress.',
-    statsTitle: 'See your progress,\nstay motivated',
-    statsDesc: 'Follow your growth with weekly, monthly, and yearly statistics and keep your streak going.',
+    introTitle: 'Habition',
+    introDesc: '',
+    trackTitle: 'Track your habits\neffortlessly',
+    trackDesc: 'Build daily routines, see your progress, and stay consistent.',
+    createTitle: 'Add your first habit\nright now',
+    createDesc: 'Create your personal plan in less than a minute',
   },
 };

@@ -1,143 +1,312 @@
-import React, { useMemo, useState, useCallback } from 'react';
-import { View, ImageBackground, StyleSheet, Pressable } from 'react-native';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import {
+  FlatList,
+  Image,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
-import { useAppColors, useIsDark, type AppColors } from '../constants/colors';
+import { useLanguage } from '../providers/LanguageProvider';
 
 interface OnboardingScreenProps {
   onDone: () => void;
 }
 
-const BOARDS = [
-  require('../assets/board1.png'),
-  require('../assets/board2.png'),
-  require('../assets/board3.png'),
-] as const;
+type Slide = {
+  key: 'intro' | 'track' | 'create';
+  kind: 'brand' | 'illustration';
+  title: string;
+  description: string;
+  image?: number;
+};
+
+const TRACK_IMAGE = require('../assets/Object 1.png');
+const CREATE_IMAGE = require('../assets/Object 2.png');
 
 export default function OnboardingScreen({ onDone }: OnboardingScreenProps) {
-  const colors = useAppColors();
-  const isDark = useIsDark();
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
-  const [currentPage, setCurrentPage] = useState(0);
+  const { width, height } = useWindowDimensions();
+  const { t } = useLanguage();
+  const listRef = useRef<FlatList<Slide>>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const styles = useMemo(() => createStyles(width, height), [height, width]);
 
-  const isLastPage = currentPage === BOARDS.length - 1;
+  const slides = useMemo<Slide[]>(
+    () => [
+      {
+        key: 'intro',
+        kind: 'brand',
+        title: t('onboarding.introTitle'),
+        description: t('onboarding.introDesc'),
+      },
+      {
+        key: 'track',
+        kind: 'illustration',
+        title: t('onboarding.trackTitle'),
+        description: t('onboarding.trackDesc'),
+        image: TRACK_IMAGE,
+      },
+      {
+        key: 'create',
+        kind: 'illustration',
+        title: t('onboarding.createTitle'),
+        description: t('onboarding.createDesc'),
+        image: CREATE_IMAGE,
+      },
+    ],
+    [t]
+  );
+
+  const isLastSlide = currentIndex === slides.length - 1;
+
+  const handleScrollEnd = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const nextIndex = Math.round(event.nativeEvent.contentOffset.x / width);
+      setCurrentIndex(nextIndex);
+    },
+    [width]
+  );
 
   const handleNext = useCallback(() => {
-    if (isLastPage) {
+    if (isLastSlide) {
       onDone();
       return;
     }
 
-    setCurrentPage((page) => page + 1);
-  }, [isLastPage, onDone]);
+    const nextIndex = currentIndex + 1;
+    listRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+    setCurrentIndex(nextIndex);
+  }, [currentIndex, isLastSlide, onDone]);
 
   return (
     <View style={styles.screen}>
-      <ImageBackground
-        key={`board-${currentPage}`}
-        source={BOARDS[currentPage]}
-        style={styles.boardImage}
-        imageStyle={styles.boardImageInner}
-        resizeMode="cover"
-      >
-        <SafeAreaView style={styles.safe}>
-          <View style={styles.overlay} pointerEvents="box-none">
-            <Pressable
-              style={({ pressed }) => [
-                styles.footerPressTarget,
-                pressed && styles.footerPressTargetPressed,
-              ]}
-              onPress={handleNext}
-            >
-              <View style={styles.pagination}>
-                {BOARDS.map((_, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.paginationDot,
-                      index === currentPage && styles.paginationDotActive,
-                    ]}
-                  />
-                ))}
-              </View>
+      <LinearGradient
+        colors={['#FFAC49', '#FF8A1F', '#FF7A00']}
+        locations={[0, 0.5, 1]}
+        start={{ x: 0.12, y: 0 }}
+        end={{ x: 0.9, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
 
-              <View style={styles.nextButton}>
-                <Feather name="chevron-right" size={30} color={colors.white} />
-              </View>
-            </Pressable>
+      <View style={styles.glowTop} />
+      <View style={styles.glowBottom} />
+
+      <SafeAreaView style={styles.safe}>
+        <FlatList
+          ref={listRef}
+          data={slides}
+          keyExtractor={(item) => item.key}
+          renderItem={({ item }) => (
+            <View style={[styles.slide, { width }]}>
+              {item.kind === 'brand' ? (
+                <View style={styles.brandContent}>
+                  <Text style={styles.brandTitle}>{item.title}</Text>
+                  {item.description ? (
+                    <Text style={styles.brandDescription}>{item.description}</Text>
+                  ) : null}
+                </View>
+              ) : (
+                <>
+                  <View style={styles.heroSection}>
+                    <View style={styles.heroShadow} />
+                    <Image source={item.image} style={styles.heroImage} resizeMode="contain" />
+                  </View>
+
+                  <View style={styles.copySection}>
+                    <Text style={styles.title}>{item.title}</Text>
+                    <Text style={styles.description}>{item.description}</Text>
+                  </View>
+                </>
+              )}
+            </View>
+          )}
+          horizontal
+          pagingEnabled
+          bounces={false}
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={handleScrollEnd}
+          getItemLayout={(_, index) => ({
+            length: width,
+            offset: width * index,
+            index,
+          })}
+        />
+
+        <View style={styles.footer}>
+          <View style={styles.pagination}>
+            {slides.map((slide, index) => (
+              <View
+                key={slide.key}
+                style={[
+                  styles.paginationDot,
+                  index === currentIndex && styles.paginationDotActive,
+                ]}
+              />
+            ))}
           </View>
-        </SafeAreaView>
-      </ImageBackground>
+
+          <Pressable
+            onPress={handleNext}
+            style={({ pressed }) => [
+              styles.nextButton,
+              currentIndex === 0 && styles.nextButtonDark,
+              pressed && styles.nextButtonPressed,
+            ]}
+          >
+            <Feather
+              name="chevron-right"
+              size={22}
+              color={currentIndex === 0 ? '#FFFFFF' : '#8C89FF'}
+            />
+          </Pressable>
+        </View>
+      </SafeAreaView>
     </View>
   );
 }
 
-function createStyles(colors: AppColors, isDark: boolean) {
+function createStyles(width: number, height: number) {
   return StyleSheet.create({
     screen: {
       flex: 1,
-      backgroundColor: isDark ? colors.bg : '#FFF8F3',
-    },
-    boardImage: {
-      flex: 1,
-    },
-    boardImageInner: {
-      width: '100%',
-      height: '100%',
+      backgroundColor: '#FF8A1F',
     },
     safe: {
       flex: 1,
     },
-    overlay: {
-      ...StyleSheet.absoluteFillObject,
-    },
-    footerPressTarget: {
+    glowTop: {
       position: 'absolute',
-      left: 24,
-      right: 24,
-      bottom: 20,
-      alignItems: 'center',
-      gap: 16,
-      zIndex: 20,
-      paddingVertical: 8,
+      top: -height * 0.16,
+      right: -width * 0.18,
+      width: width * 0.92,
+      height: width * 0.92,
+      borderRadius: width,
+      backgroundColor: 'rgba(255,255,255,0.12)',
     },
-    footerPressTargetPressed: {
-      opacity: 0.96,
+    glowBottom: {
+      position: 'absolute',
+      bottom: -height * 0.14,
+      left: -width * 0.32,
+      width: width * 0.96,
+      height: width * 0.96,
+      borderRadius: width,
+      backgroundColor: 'rgba(255,255,255,0.08)',
+    },
+    slide: {
+      flex: 1,
+      paddingHorizontal: 26,
+      paddingTop: 12,
+      paddingBottom: 120,
+    },
+    brandContent: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingBottom: 84,
+    },
+    brandTitle: {
+      color: '#FFFFFF',
+      fontSize: Math.min(width * 0.16, 62),
+      fontWeight: '800',
+      letterSpacing: -2.2,
+      textAlign: 'center',
+    },
+    brandDescription: {
+      marginTop: 18,
+      maxWidth: 260,
+      color: 'rgba(255,255,255,0.84)',
+      fontSize: 15,
+      lineHeight: 22,
+      textAlign: 'center',
+    },
+    heroSection: {
+      flex: 0.58,
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      paddingBottom: 22,
+    },
+    heroShadow: {
+      position: 'absolute',
+      bottom: 14,
+      width: width * 0.44,
+      height: 28,
+      borderRadius: 999,
+      backgroundColor: 'rgba(111, 47, 0, 0.22)',
+    },
+    heroImage: {
+      width: width * 0.82,
+      height: Math.min(height * 0.46, 430),
+    },
+    copySection: {
+      flex: 0.42,
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      paddingTop: 18,
+    },
+    title: {
+      color: '#FFFFFF',
+      fontSize: Math.min(width * 0.12, 46),
+      fontWeight: '800',
+      lineHeight: Math.min(width * 0.14, 52),
+      letterSpacing: -1.4,
+      textAlign: 'center',
+    },
+    description: {
+      marginTop: 14,
+      maxWidth: width * 0.8,
+      color: 'rgba(255,255,255,0.88)',
+      fontSize: 15,
+      lineHeight: 22,
+      textAlign: 'center',
+    },
+    footer: {
+      position: 'absolute',
+      right: 28,
+      bottom: 24,
+      left: 28,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
     },
     pagination: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 999,
-      backgroundColor: 'rgba(255,255,255,0.7)',
     },
     paginationDot: {
-      width: 8,
-      height: 8,
+      width: 7,
+      height: 7,
       borderRadius: 999,
-      backgroundColor: isDark ? colors.handle : '#E6D8CF',
+      backgroundColor: 'rgba(255,255,255,0.35)',
     },
     paginationDotActive: {
       width: 28,
-      backgroundColor: colors.orange,
+      backgroundColor: '#FFFFFF',
     },
     nextButton: {
-      width: 76,
-      height: 76,
-      borderRadius: 38,
-      backgroundColor: colors.orange,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
       alignItems: 'center',
       justifyContent: 'center',
-      borderWidth: 3,
-      borderColor: 'rgba(255,255,255,0.92)',
-      shadowColor: colors.orange,
+      backgroundColor: '#FFFFFF',
+      shadowColor: '#7A3600',
       shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: isDark ? 0.22 : 0.28,
-      shadowRadius: 18,
+      shadowOpacity: 0.18,
+      shadowRadius: 16,
       elevation: 8,
-      zIndex: 30,
+    },
+    nextButtonDark: {
+      backgroundColor: '#A6550A',
+    },
+    nextButtonPressed: {
+      transform: [{ scale: 0.97 }],
     },
   });
 }

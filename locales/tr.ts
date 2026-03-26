@@ -119,11 +119,11 @@ export default {
     themeLabel: '%{option} tema',
   },
   onboarding: {
-    createTitle: 'Alışkanlıklarını\nkolayca oluştur',
-    createDesc: 'Hedefine uygun alışkanlıklar ekle, günlerini seç ve sana uygun bir rutin kur.',
-    trackTitle: 'Her günü tek\ndokunuşla takip et',
-    trackDesc: 'Yaptığın alışkanlıkları işaretle, günlük ilerlemeni kaybetmeden düzenli kal.',
-    statsTitle: 'İlerlemeni gör,\nmotivasyonunu koru',
-    statsDesc: 'Haftalık, aylık ve yıllık istatistiklerle gelişimini izle ve serini büyüt.',
+    introTitle: 'Habition',
+    introDesc: '',
+    trackTitle: 'Alışkanlıklarını\nkolayca takip et',
+    trackDesc: 'Günlük rutinlerini oluştur, ilerlemeni gör, istikrar kazan',
+    createTitle: 'İlk alışkanlığını şimdi\nekle',
+    createDesc: '1 dakikadan kısa sürede kişisel planını oluştur',
   },
 };
